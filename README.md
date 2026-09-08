@@ -16,10 +16,10 @@ It's my graphic framework DirectX 12 on C++. At the moment, I have implemented t
 
 -Particle System
 
-In the future, I plan to implement at least the following techniques:
-
--Gamma Correction
+-Gamma Correction and Tonemapping
 
 -Post Processing
+
+In the future, I plan to implement at least the following techniques:
 
 -Physically Based Rendering
