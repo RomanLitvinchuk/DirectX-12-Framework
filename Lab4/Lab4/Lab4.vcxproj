@@ -145,7 +145,7 @@
     <ClCompile Include="g_buffer.cpp" />
     <ClCompile Include="layouts.cpp" />
     <ClCompile Include="octree.cpp" />
-    <ClCompile Include="parse.cpp" />
+    <ClCompile Include="model_parser.cpp" />
     <ClCompile Include="particles_rendering.cpp" />
     <ClCompile Include="post_process.cpp" />
     <ClCompile Include="PP_drawcalls.cpp" />
@@ -170,11 +170,13 @@
     <ClInclude Include="instances.h" />
     <ClInclude Include="light.h" />
     <ClInclude Include="materials.h" />
+    <ClInclude Include="model_parser.h" />
     <ClInclude Include="object_constants.h" />
     <ClInclude Include="octree.h" />
     <ClInclude Include="particle.h" />
     <ClInclude Include="post_process.h" />
     <ClInclude Include="rendering_system.h" />
+    <ClInclude Include="scene_data.h" />
     <ClInclude Include="shadow_map.h" />
     <ClInclude Include="singletone_device.h" />
     <ClInclude Include="ssao.h" />

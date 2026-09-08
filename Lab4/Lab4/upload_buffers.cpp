@@ -40,7 +40,7 @@ void DX12App::FillUploadBuffers()
 	deadParticlesCounterUpload->CopyData(0, PARTICLE_COUNT);
 	sortParticlesCounterUpload->CopyData(0, 0);
 
-	for (int i = 0; i < materialData.size(); ++i) {
-		materialBuffer->CopyData(i, materialData[i]);
+	for (int i = 0; i < sceneData.materials.size(); ++i) {
+		materialBuffer->CopyData(i, sceneData.materials[i]);
 	}
 }

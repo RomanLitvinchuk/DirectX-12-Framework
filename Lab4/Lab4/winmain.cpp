@@ -178,6 +178,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 	MyFramework.SetScissor();
 	MyFramework.InitProjectionMatrix();
     MyFramework.Parsing();
+    MyFramework.BuildOctree();
     MyFramework.CreateSOBuffers();
     MyFramework.BuildBulbGeometry();
     MyFramework.BuildBoxGeometry();

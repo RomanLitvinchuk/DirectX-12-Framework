@@ -93,10 +93,10 @@ void DX12App::UpdateHullBuffer() {
 }
 
 void DX12App::UpdateTextureAnimation() {
-	for (int i = 0; i < materialData.size(); ++i) {
-		if (materialData[i].isTree == 1) {
-			float tu = materialData[i].MatTransform(1, 0);
-			float tv = materialData[i].MatTransform(1, 1);
+	for (int i = 0; i < sceneData.materials.size(); ++i) {
+		if (sceneData.materials[i].isTree == 1) {
+			float tu = sceneData.materials[i].MatTransform(1, 0);
+			float tv = sceneData.materials[i].MatTransform(1, 1);
 			tu += 0.1f * gt.DeltaTime();
 			tv += 0.02f * gt.DeltaTime();
 
@@ -104,10 +104,10 @@ void DX12App::UpdateTextureAnimation() {
 				tu -= 1.0f;
 			if (tv >= 1.0f)
 				tv -= 1.0f;
-			materialData[i].MatTransform(1, 0) = tu;
-			materialData[i].MatTransform(1, 1) = tv;
+			sceneData.materials[i].MatTransform(1, 0) = tu;
+			sceneData.materials[i].MatTransform(1, 1) = tv;
 		}
-		materialBuffer->CopyData(i, materialData[i]);
+		materialBuffer->CopyData(i, sceneData.materials[i]);
 	}
 }
 

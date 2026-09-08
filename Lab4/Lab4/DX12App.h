@@ -13,10 +13,6 @@
 #include "game_timer.h"
 #include "upload_buffer.h"
 #include "object_constants.h"
-#include "vertex.h"
-#include "texture.h"
-#include "materials.h"
-#include "submesh.h"
 #include "g_buffer.h"
 #include "rendering_system.h"
 #include "light.h"
@@ -31,6 +27,7 @@
 #include "shadow_map.h"
 #include "ssao.h"
 #include "singletone_device.h"
+#include "scene_data.h"
 
 using namespace Microsoft::WRL;
 using namespace DirectX;
@@ -107,12 +104,7 @@ public:
 	void UpdateCascades();
 
 	void Parsing();
-	void ParseFile(const std::string& filename, const Matrix& transform, UINT instanceCount);
-	void ParseNode(const std::string& filename, aiNode* node, const aiScene* scene, const Matrix& transform, int materialOffset, 
-		std::vector<Vertex>& vertices, std::vector<std::uint32_t>& indices, UINT instanceCount);
-	void ParseMesh(const std::string& filename, const aiScene* scene, aiMesh* mesh, const Matrix& transform, int materialOffset, 
-		std::vector<Vertex>& vertices, std::vector<std::uint32_t>& indices, UINT instanceCount);
-	void ExtractMaterialData(const std::string& filename, int MaterialIndex, aiMaterial* material);
+	void BuildOctree();
 
 	ComPtr<ID3D12Device> GetDevice() const { return device; }
 	Camera& GetCamera() { return camera; }
@@ -224,16 +216,10 @@ private:
 	std::vector<UINT> visibleIndices;
 	bool treeIsVisible;
 
-	const aiScene* scene;
-	std::vector<Vertex> vertices;
-	std::vector<std::uint32_t> indices;
-	std::vector<UINT> meshIndexCounts;
-	std::unordered_map<std::wstring, std::unique_ptr<Texture>> textures;
-	std::vector<aiMaterial*> materials;
 	std::vector<int> meshesMaterialIndex;
-	std::vector<MaterialConstants> materialData;
 
-	std::vector<Submesh> submeshes;
+	SceneData sceneData;
+
 	const float LOD_DISTANCE = 600.0f * 600.0f;
 	const float BILLBOARD_DISTANCE = 900.0f * 900.0f;
 

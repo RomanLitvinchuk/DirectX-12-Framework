@@ -5,8 +5,8 @@
 
 void DX12App::InitRenderSystem() {
 	ID3D12Resource* noiseTexResource = nullptr;
-	auto iter = textures.find(L"noise");
-	if (iter != textures.end()) {
+	auto iter = sceneData.textures.find(L"noise");
+	if (iter != sceneData.textures.end()) {
 		noiseTexResource = iter->second->Resource.Get();
 	}
 	renderSystem = new RenderingSystem(clientWidth, clientHeight, noiseTexResource);
@@ -15,7 +15,7 @@ void DX12App::InitRenderSystem() {
 }
 
 void DX12App::sortLODs(){
-	for (auto& sm : submeshes) {
+	for (auto& sm : sceneData.submeshes) {
 		sm.sorted_lod0.clear();
 		sm.sorted_lod1.clear();
 		sm.sorted_billboards.clear();
@@ -43,7 +43,7 @@ void DX12App::sortLODs(){
 void DX12App::DrawShadows() {
 
 	UINT totalInstances = 0;
-	for (auto& sm : submeshes) {
+	for (auto& sm : sceneData.submeshes) {
 		if (sm.sorted_lod0.empty()) continue;
 
 		for (size_t i = 0; i < sm.sorted_lod0.size(); ++i) {
@@ -92,7 +92,7 @@ void DX12App::DrawShadows() {
 
 		commandList->SetGraphicsRootConstantBufferView(0, shadowCbBaseAddress + i * shadowElementSize);
 
-		for (auto& sm : submeshes) {
+		for (auto& sm : sceneData.submeshes) {
 			if (sm.sorted_lod0.empty()) continue;
 
 			commandList->DrawIndexedInstanced(
@@ -136,7 +136,7 @@ void DX12App::DrawToGBuffer() {
 	Vector3 cameraPos = camera.mCameraPos;
 	for (UINT idx : visibleIndices)
 	{
-		auto& sm = submeshes[idx];
+		auto& sm = sceneData.submeshes[idx];
 
 		commandList->SetGraphicsRootSignature(renderSystem->opaqueRS_.Get());
 		commandList->SetPipelineState(renderSystem->opaquePSO_.Get());
@@ -151,8 +151,8 @@ void DX12App::DrawToGBuffer() {
 		D3D12_GPU_VIRTUAL_ADDRESS matAddress = materialBuffer->Resource()->GetGPUVirtualAddress() + matIndex * matSize;
 		commandList->SetGraphicsRootConstantBufferView(3, matAddress);
 
-		treeIsVisible = materialData[matIndex].isTree == 1;
-		int texHeapIndex = materialData[matIndex].diffuseTextureIndex + 1;
+		treeIsVisible = sceneData.materials[matIndex].isTree == 1;
+		int texHeapIndex = sceneData.materials[matIndex].diffuseTextureIndex + 1;
 
 		CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(
 			cbvSrvHeap->GetGPUDescriptorHandleForHeapStart(),
@@ -161,14 +161,14 @@ void DX12App::DrawToGBuffer() {
 
 		commandList->SetGraphicsRootDescriptorTable(1, srvHandle);
 
-		int normHeapIndex = materialData[matIndex].normalTextureIndex + 1;
+		int normHeapIndex = sceneData.materials[matIndex].normalTextureIndex + 1;
 
 		CD3DX12_GPU_DESCRIPTOR_HANDLE normHandle(
 			cbvSrvHeap->GetGPUDescriptorHandleForHeapStart(),
 			normHeapIndex,
 			cbvDescriptorSize);
 
-		int dispHeapIndex = materialData[matIndex].displacementTextureIndex + 1;
+		int dispHeapIndex = sceneData.materials[matIndex].displacementTextureIndex + 1;
 
 		CD3DX12_GPU_DESCRIPTOR_HANDLE dispHandle(
 			cbvSrvHeap->GetGPUDescriptorHandleForHeapStart(),
@@ -188,11 +188,11 @@ void DX12App::GetVisibleObjects() {
 	visibleIndices.clear();
 	if (camera.isFrustumCullingEnabled)
 	{
-		octree.GetVisibleObjects(camera.frustum, submeshes, visibleIndices);
+		octree.GetVisibleObjects(camera.frustum, sceneData.submeshes, visibleIndices);
 	}
 	else
 	{
-		visibleIndices.resize(submeshes.size());
+		visibleIndices.resize(sceneData.submeshes.size());
 		std::iota(visibleIndices.begin(), visibleIndices.end(), 0);
 	}
 }
@@ -265,7 +265,7 @@ void DX12App::DrawBillboardsToGBuffer(UINT& currentInstanceOffset, Submesh& sm) 
 		commandList->SetGraphicsRootConstantBufferView(1, cameraBuffer->Resource()->GetGPUVirtualAddress());
 		commandList->SetGraphicsRootConstantBufferView(2, objectsUploadBuffer->Resource()->GetGPUVirtualAddress());
 		int matIndex = sm.materialIndex;
-		int bTextureIndex = materialData[matIndex].billboardTextureIndex + 1;
+		int bTextureIndex = sceneData.materials[matIndex].billboardTextureIndex + 1;
 		CD3DX12_GPU_DESCRIPTOR_HANDLE bHandle(cbvSrvHeap->GetGPUDescriptorHandleForHeapStart(), bTextureIndex, cbvDescriptorSize);
 		commandList->SetGraphicsRootDescriptorTable(3, bHandle);
 		commandList->SetGraphicsRootDescriptorTable(4, samplerHeap->GetGPUDescriptorHandleForHeapStart());

@@ -2,7 +2,7 @@
 
 void DX12App::CreateCBVDescriptorHeap() {
 	D3D12_DESCRIPTOR_HEAP_DESC CBV_SRV_HeapDesc;
-	CBV_SRV_HeapDesc.NumDescriptors = 2 + textures.size();
+	CBV_SRV_HeapDesc.NumDescriptors = 2 + sceneData.textures.size();
 	CBV_SRV_HeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	CBV_SRV_HeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	CBV_SRV_HeapDesc.NodeMask = 0;
@@ -20,7 +20,7 @@ void DX12App::CreateSRV() {
 
 	auto handle = cbvSrvHeap->GetCPUDescriptorHandleForHeapStart();
 
-	for (auto& [name, tex] : textures)
+	for (auto& [name, tex] : sceneData.textures)
 	{
 		CD3DX12_CPU_DESCRIPTOR_HANDLE h(handle,
 			tex->srvHeapIndex + 1,

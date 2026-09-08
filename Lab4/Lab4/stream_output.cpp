@@ -55,7 +55,7 @@ void DX12App::DrawToStreamOutput()
 
 	commandList->SetGraphicsRootConstantBufferView(6, hullBuffer->Resource()->GetGPUVirtualAddress());
 
-	for (auto& sm : submeshes) {
+	for (auto& sm : sceneData.submeshes) {
 		if (sm.name_.find("Sketchfab") != std::string::npos) {
 			streamOutputMesh = sm;
 			break;
@@ -66,7 +66,7 @@ void DX12App::DrawToStreamOutput()
 	D3D12_GPU_VIRTUAL_ADDRESS matAddress = materialBuffer->Resource()->GetGPUVirtualAddress() + matIndex * matSize;
 	commandList->SetGraphicsRootConstantBufferView(3, matAddress);
 
-	int texHeapIndex = materialData[matIndex].diffuseTextureIndex + 1;
+	int texHeapIndex = sceneData.materials[matIndex].diffuseTextureIndex + 1;
 
 	CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(
 		cbvSrvHeap->GetGPUDescriptorHandleForHeapStart(),
@@ -75,14 +75,14 @@ void DX12App::DrawToStreamOutput()
 
 	commandList->SetGraphicsRootDescriptorTable(1, srvHandle);
 
-	int normHeapIndex = materialData[matIndex].normalTextureIndex + 1;
+	int normHeapIndex = sceneData.materials[matIndex].normalTextureIndex + 1;
 
 	CD3DX12_GPU_DESCRIPTOR_HANDLE normHandle(
 		cbvSrvHeap->GetGPUDescriptorHandleForHeapStart(),
 		normHeapIndex,
 		cbvDescriptorSize);
 
-	int dispHeapIndex = materialData[matIndex].displacementTextureIndex + 1;
+	int dispHeapIndex = sceneData.materials[matIndex].displacementTextureIndex + 1;
 
 	CD3DX12_GPU_DESCRIPTOR_HANDLE dispHandle(
 		cbvSrvHeap->GetGPUDescriptorHandleForHeapStart(),

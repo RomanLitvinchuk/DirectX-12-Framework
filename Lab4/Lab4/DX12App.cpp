@@ -241,10 +241,10 @@ void DX12App::InitProjectionMatrix() {
 
 
 void DX12App::CreateVertexBuffer() {
-	UINT vbByteSize = (UINT)(vertices.size() * sizeof(Vertex));
+	UINT vbByteSize = (UINT)(sceneData.vertices.size() * sizeof(Vertex));
 	ThrowIfFailed(commandAllocator->Reset());
 	ThrowIfFailed(commandList->Reset(commandAllocator.Get(), nullptr));
-	vertexBufferGPU = d3dUtil::CreateDefaultBuffer(device.Get(), commandList.Get(), vertices.data(), vbByteSize, vertexBufferUploader);
+	vertexBufferGPU = d3dUtil::CreateDefaultBuffer(device.Get(), commandList.Get(), sceneData.vertices.data(), vbByteSize, vertexBufferUploader);
 	ThrowIfFailed(commandList->Close());
 	ID3D12CommandList* cmdsLists[] = { commandList.Get() };
 	commandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
@@ -258,10 +258,10 @@ void DX12App::CreateVertexBuffer() {
 
 
 void DX12App::CreateIndexBuffer() {
-	UINT ibByteSize = (UINT)(indices.size() * sizeof(std::uint32_t));
+	UINT ibByteSize = (UINT)(sceneData.indices.size() * sizeof(std::uint32_t));
 	ThrowIfFailed(commandAllocator->Reset());
 	ThrowIfFailed(commandList->Reset(commandAllocator.Get(), nullptr));
-	indexBufferGPU = d3dUtil::CreateDefaultBuffer(device.Get(), commandList.Get(), indices.data(), ibByteSize, indexBufferUploader);
+	indexBufferGPU = d3dUtil::CreateDefaultBuffer(device.Get(), commandList.Get(), sceneData.indices.data(), ibByteSize, indexBufferUploader);
 	ThrowIfFailed(commandList->Close());
 	ID3D12CommandList* cmdsLists[] = { commandList.Get() };
 	commandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
@@ -286,8 +286,8 @@ void DX12App::OnResize() {
 	renderSystem->g_buffer->OnResize(clientWidth, clientHeight);
 	renderSystem->post_process->OnResize(clientWidth, clientHeight);
 	ID3D12Resource* noiseTexResource = nullptr;
-	auto iter = textures.find(L"noise");
-	if (iter != textures.end()) {
+	auto iter = sceneData.textures.find(L"noise");
+	if (iter != sceneData.textures.end()) {
 		noiseTexResource = iter->second->Resource.Get();
 	}
 	renderSystem->ssao->OnResize(clientWidth / 2, clientHeight / 2,
@@ -300,5 +300,10 @@ void DX12App::OnResize() {
 	ID3D12CommandList* cmdsLists[] = { commandList.Get() };
 	commandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 	FlushCommandQueue();
+}
+
+void DX12App::BuildOctree() {
+	visibleIndices.reserve(sceneData.submeshes.size());
+	octree.Build(sceneData.submeshes);
 }
  
