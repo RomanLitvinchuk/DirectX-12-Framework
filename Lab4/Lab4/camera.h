@@ -22,7 +22,7 @@ struct HullBuffer {
 
 struct Camera {
 
-	void UpdateCameraPos(const bool* keys, const GameTimer& gt);
+	void MoveBy(const Vector3& delta);
 	void UpdateCameraTarget(WPARAM btnState, int dx, int dy);
 	void UpdateFrustumCullingState();
 	void UpdateViewMatrix();

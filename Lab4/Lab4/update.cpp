@@ -9,7 +9,11 @@ void DX12App::OnMouseUp() {
 }
 
 void DX12App::Update() {
-	camera.UpdateCameraPos(m_key_states, gt);
+	float dt = gt.DeltaTime();
+	float speed = camera.mCameraSpeed * dt;
+
+	inputHandler.handleInput(m_key_states, camera, speed);
+
 	camera.UpdateViewMatrix();
 	UpdateMatricesData();
 	UpdateParticleData();

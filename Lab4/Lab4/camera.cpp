@@ -1,18 +1,11 @@
 #include "camera.h"
 #include "game_timer.h"
 #include <algorithm>
+#include "input_handler.h"
 
-void Camera::UpdateCameraPos(const bool* keys, const GameTimer& gt)
-{
-    float dt = gt.DeltaTime();
-    float speed = mCameraSpeed * dt;
-
-    if (keys['W']) mCameraPos += mCameraTarget * speed;
-    if (keys['S']) mCameraPos -= mCameraTarget * speed;
-    if (keys['A']) mCameraPos -= mCameraTarget.Cross(mCameraUp) * speed;
-    if (keys['D']) mCameraPos += mCameraTarget.Cross(mCameraUp) * speed;
+void Camera::MoveBy(const Vector3& delta) {
+	mCameraPos += delta;
 }
-
 
 void Camera::UpdateCameraTarget(WPARAM btnState, int dx, int dy) {
 	if ((btnState & MK_LBUTTON) != 0)

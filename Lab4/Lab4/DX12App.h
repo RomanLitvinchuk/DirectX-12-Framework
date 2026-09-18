@@ -28,6 +28,8 @@
 #include "ssao.h"
 #include "singletone_device.h"
 #include "scene_data.h"
+#include "input_handler.h"
+
 
 using namespace Microsoft::WRL;
 using namespace DirectX;
@@ -141,6 +143,7 @@ private:
 	void UpdateCameraConstants();
 
 	GameTimer gt;
+	InputHandler inputHandler;
 	DXGI_FORMAT backBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 	DXGI_FORMAT depthStencilFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	int clientWidth = 1424;
