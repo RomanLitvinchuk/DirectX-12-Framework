@@ -29,6 +29,9 @@
 #include "singletone_device.h"
 #include "scene_data.h"
 #include "input_handler.h"
+#include "imgui.h"
+#include "imgui_impl_dx12.h"
+#include "imgui_impl_win32.h"
 
 
 using namespace Microsoft::WRL;
@@ -124,6 +127,13 @@ public:
 	int GetClientWidth() { return clientWidth; }
 	int GetClientHeight() { return clientHeight; }
 
+	void InitImGui(HWND hwnd);
+	void ShutdownImGui();
+	void NewImGuiFrame();
+	void BuildImGui();
+	void RenderImGui();
+	void CreateImGuiDescriptorHeap();
+
 private:
 	void EnableDebug();
 	void GetVisibleObjects();
@@ -141,6 +151,8 @@ private:
 	void UpdateHullBuffer();
 	void UpdateObjectsBuffer();
 	void UpdateCameraConstants();
+
+
 
 	GameTimer gt;
 	InputHandler inputHandler;
@@ -168,6 +180,8 @@ private:
 	ComPtr<ID3D12DescriptorHeap> cbvSrvHeap = nullptr;
 	ComPtr<ID3D12DescriptorHeap> uavHeap = nullptr;
 	ComPtr<ID3D12DescriptorHeap> samplerHeap = nullptr;
+	ComPtr<ID3D12DescriptorHeap> imGuiSrvHeap = nullptr;
+	static constexpr UINT IMGUI_DESCRIPTOR_COUNT = 64;
 	int currentBackBuffer = 0;
 
 	ComPtr<ID3D12Resource> swapChainBuffer[2];

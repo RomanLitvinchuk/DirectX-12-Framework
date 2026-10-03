@@ -13,6 +13,42 @@
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
+namespace
+{
+	ID3D12DescriptorHeap* g_ImGuiHeap = nullptr;
+	UINT g_ImGuiDescriptorSize = 0;
+
+	UINT g_ImGuiNextDescriptor = 0;
+
+	constexpr UINT IMGUI_DESCRIPTOR_COUNT = 64;
+
+	void ImGuiSrvDescriptorAlloc(
+		ImGui_ImplDX12_InitInfo*,
+		D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle,
+		D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle)
+	{
+		UINT index = g_ImGuiNextDescriptor++;
+
+		IM_ASSERT(index < IMGUI_DESCRIPTOR_COUNT);
+
+		cpuHandle->ptr =
+			g_ImGuiHeap->GetCPUDescriptorHandleForHeapStart().ptr +
+			index * g_ImGuiDescriptorSize;
+
+		gpuHandle->ptr =
+			g_ImGuiHeap->GetGPUDescriptorHandleForHeapStart().ptr +
+			index * g_ImGuiDescriptorSize;
+	}
+
+	void ImGuiSrvDescriptorFree(
+		ImGui_ImplDX12_InitInfo*,
+		D3D12_CPU_DESCRIPTOR_HANDLE,
+		D3D12_GPU_DESCRIPTOR_HANDLE)
+	{
+
+	}
+}
+
 void DX12App::EnableDebug() {
 #if defined(DEBUG) || defined(_DEBUG)
 	{
@@ -23,6 +59,90 @@ void DX12App::EnableDebug() {
 #endif
 }
 
+
+void DX12App::CreateImGuiDescriptorHeap()
+{
+	D3D12_DESCRIPTOR_HEAP_DESC desc = {};
+	desc.NumDescriptors = IMGUI_DESCRIPTOR_COUNT;
+	desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	desc.NodeMask = 0;
+
+	ThrowIfFailed(device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&imGuiSrvHeap)));
+
+	g_ImGuiHeap = imGuiSrvHeap.Get();
+	g_ImGuiDescriptorSize =
+		device->GetDescriptorHandleIncrementSize(
+			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV
+		);
+}
+
+void DX12App::InitImGui(HWND hwnd) {
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+	ImGui::StyleColorsDark();
+
+	ImGui_ImplWin32_Init(hwnd);
+
+	ImGui_ImplDX12_InitInfo initInfo = {};
+	initInfo.Device = device.Get();
+	initInfo.CommandQueue = commandQueue.Get();
+	initInfo.NumFramesInFlight = 2;
+	initInfo.RTVFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+	initInfo.DSVFormat = DXGI_FORMAT_UNKNOWN;
+	initInfo.SrvDescriptorHeap = imGuiSrvHeap.Get();
+	initInfo.SrvDescriptorAllocFn = ImGuiSrvDescriptorAlloc;
+	initInfo.SrvDescriptorFreeFn = ImGuiSrvDescriptorFree;
+
+	ThrowIfFailed(ImGui_ImplDX12_Init(&initInfo) ? S_OK : E_FAIL);
+}
+
+void DX12App::NewImGuiFrame(){
+	ImGui_ImplDX12_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+
+	ImGui::NewFrame();
+}
+
+void DX12App::BuildImGui() {
+	//static bool showDemoWindow = true;
+	//if (showDemoWindow) 
+	//{
+	//	ImGui::ShowDemoWindow(&showDemoWindow);
+	//}
+	ImGui::Begin("Framework");
+	ImGui::Text("DirectX 12");
+	ImGui::Separator();
+	ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+	ImGui::Text("Frame time: %.3f ms", 1000.0f / ImGui::GetIO().Framerate);
+	ImGui::End();
+}
+
+void DX12App::RenderImGui() {
+	ImGui::Render();
+	D3D12_CPU_DESCRIPTOR_HANDLE backBufferRTV = GetBackBuffer();
+	commandList->OMSetRenderTargets(1, &backBufferRTV, FALSE, nullptr);
+	ID3D12DescriptorHeap* heaps[] =
+	{
+		imGuiSrvHeap.Get()
+	};
+	commandList->SetDescriptorHeaps(1, heaps);
+	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList.Get());
+}
+
+void DX12App::ShutdownImGui() {
+	ImGui_ImplDX12_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+
+	ImGui::DestroyContext();
+
+	g_ImGuiHeap = nullptr;
+	g_ImGuiDescriptorSize = 0;
+	g_ImGuiNextDescriptor = 0;
+	imGuiSrvHeap.Reset();
+}
 
 void DX12App::InitializeDevice() {
 	EnableDebug();

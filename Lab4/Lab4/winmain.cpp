@@ -10,6 +10,8 @@
 #include "game_timer.h"
 #include "vertex.h"
 #include "d3dUtil.h"
+#include "imgui.h"
+#include "imgui_impl_win32.h"
 #pragma comment(linker, "/entry:wWinMainCRTStartup")
 HWND g_hWnd = 0;
 DX12App MyFramework;
@@ -18,8 +20,25 @@ using namespace DirectX;
 using namespace DX12;
 using namespace Microsoft::WRL;
 
+extern IMGUI_IMPL_API LRESULT
+ImGui_ImplWin32_WndProcHandler(
+	HWND hWnd,
+	UINT msg,
+	WPARAM wParam,
+	LPARAM lParam
+);
+
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+	if (ImGui_ImplWin32_WndProcHandler(
+		hwnd,
+		msg,
+		wParam,
+		lParam))
+	{
+		return true;
+	}
+
     switch (msg)
     {
     case WM_CREATE:
@@ -51,7 +70,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             short dy = raw->data.mouse.lLastY;
 
             bool leftDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
-            MyFramework.GetCamera().UpdateCameraTarget(leftDown ? MK_LBUTTON : 0, dx, dy);
+            if (!ImGui::GetIO().WantCaptureMouse)
+            {
+                MyFramework.GetCamera().UpdateCameraTarget(leftDown ? MK_LBUTTON : 0, dx, dy);
+            }
         }
 
         else if (raw->header.dwType == RIM_TYPEKEYBOARD)
@@ -64,9 +86,17 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
             bool keyDown = !(flags & RI_KEY_BREAK);
 
-            if (virtualKey < 256) {
-                MyFramework.m_key_states[virtualKey] = keyDown;
-            }
+			if (virtualKey < 256)
+			{
+				if (!ImGui::GetIO().WantCaptureKeyboard)
+				{
+					MyFramework.m_key_states[virtualKey] = keyDown;
+				}
+				else if (keyDown)
+				{
+					MyFramework.m_key_states[virtualKey] = false;
+				}
+			}
             if (virtualKey == 'F' && keyDown) {
                 MyFramework.GetCamera().UpdateFrustumCullingState();
                 MessageBox(NULL, L"Frustum culling is switched", L"Switch", MB_OK);
@@ -144,7 +174,9 @@ int WindowClass::WRun(GameTimer* gt) {
         {
             gt->Tick();
             MyFramework.CalculateGameStats(hWnd_);
+            MyFramework.NewImGuiFrame();
             MyFramework.Update();
+            MyFramework.BuildImGui();
             MyFramework.Draw();
         }
     }
@@ -167,25 +199,38 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 	MyFramework.InitializeDevice();
 	MyFramework.InitializeCommandObjects();
 	MyFramework.CreateSwapChain(g_hWnd);
+
 	MyFramework.CreateRTVAndDSVDescriptorHeaps();
 	MyFramework.CreateRTV();
 	MyFramework.CreateDSV();
+
     MyFramework.LoadTextures();
+
     MyFramework.CreateCBVDescriptorHeap();
     MyFramework.CreateSRV();
     MyFramework.CreateSamplerHeap();
+
+    MyFramework.CreateImGuiDescriptorHeap();
+    MyFramework.InitImGui(g_hWnd);
+
 	MyFramework.SetViewport();
 	MyFramework.SetScissor();
+
 	MyFramework.InitProjectionMatrix();
+
     MyFramework.Parsing();
     MyFramework.BuildOctree();
+
     MyFramework.CreateSOBuffers();
+
     MyFramework.BuildBulbGeometry();
     MyFramework.BuildBoxGeometry();
 	MyFramework.CreateVertexBuffer();
 	MyFramework.CreateIndexBuffer();
+
 	MyFramework.InitUploadBuffers();
     MyFramework.InitUAVBuffers();
+
     MyFramework.InitEmitter();
 	MyFramework.CreateConstantBufferView();
     MyFramework.InitRenderSystem();
@@ -198,6 +243,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 	
 
 	wnd.WRun(&MyFramework.GetTimer());
+
+    MyFramework.ShutdownImGui();
 
 	return 0;
 }

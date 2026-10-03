@@ -392,6 +392,8 @@ void DX12App::Draw()
 	d3dUtil::SwapTextures(commandList, ppWriteTexture, ppReadTexture);
 	DrawPPOutput(ppReadTexture);
 
+	RenderImGui();
+
 	CD3DX12_RESOURCE_BARRIER barrierBack = CD3DX12_RESOURCE_BARRIER::Transition(
 		CurrentBackBuffer(),
 		D3D12_RESOURCE_STATE_RENDER_TARGET,
