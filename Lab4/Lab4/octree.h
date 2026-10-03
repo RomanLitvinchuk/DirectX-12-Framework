@@ -1,11 +1,9 @@
-#ifndef OCTREE_H_
-#define OCTREE_H_
+#pragma once
 #include <DirectXCollision.h>
 #include <vector>
 #include <memory>
+#include <Windows.h>
 #include "submesh.h"
-
-using namespace DirectX;
 
 struct BVHNode {
     BoundingBox bounds;
@@ -33,5 +31,3 @@ private:
         std::vector<UINT>& outVisibleIndices) const;
     void CollectAllNodesRecursive(BVHNode* node, std::vector<BVHNode*>& outNodes);
 };
-
-#endif //OCTREE_H_

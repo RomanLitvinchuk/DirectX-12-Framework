@@ -1,9 +1,6 @@
-#ifndef OBJECT_CONSTANTS_
-#define OBJECT_CONSTANTS_
-#include <d3d12.h>
+#pragma once
 #include <SimpleMath.h>
 
-using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
 
@@ -20,5 +17,3 @@ struct Matrices {
 	Matrix invView;
 	Matrix invProj;
 };
-
-#endif //OBJECT_CONSTANTS_

@@ -1,6 +1,4 @@
-#ifndef GAME_TIMER_
-#define GAME_TIMER_
-#include <Windows.h>
+#pragma once
 
 class GameTimer {
 public:
@@ -25,5 +23,3 @@ private:
 
 	bool m_stopped_;
 };
-
-#endif //GAME_TIMER_

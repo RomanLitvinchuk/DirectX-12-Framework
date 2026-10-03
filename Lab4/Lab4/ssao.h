@@ -1,11 +1,9 @@
-#ifndef SSAO_H_
-#define SSAO_H_
+#pragma once
 #include <d3d12.h>
-#include <SimpleMath.h>
-#include "throw_if_failed.h"
+#include <wrl.h>
 #include "texture.h"
-#include "d3dx12.h"
-#include "singletone_device.h"
+
+using Microsoft::WRL::ComPtr;
 
 class SSAO {
 private:
@@ -15,7 +13,7 @@ private:
 	ComPtr<ID3D12DescriptorHeap> samplerHeap = nullptr;
 	ComPtr<ID3D12DescriptorHeap> rtvHeap = nullptr;
 
-	ComPtr<ID3D12Device> device = SingletonDevice::GetDevice();
+	ComPtr<ID3D12Device> device = nullptr;
 
 	void CreateHeaps();
 	void CreateTexture(int width, int height);
@@ -26,35 +24,15 @@ private:
 	void BarriersToDefault(ComPtr<ID3D12GraphicsCommandList> commandList);
 	void ResetTextures();
 public:
-	SSAO(int width, int height, ID3D12Resource* depthTexture, ID3D12Resource* normalTexture, ID3D12Resource* noiseTexture) {
-		CreateHeaps();
-		CreateTexture(width, height);
-		CreateRTV();
-		CreateSRV(depthTexture, normalTexture, noiseTexture);
-		CreateSamplers();
-	}
+	SSAO(int width, int height, ID3D12Resource* depthTexture, ID3D12Resource* normalTexture, ID3D12Resource* noiseTexture);
 	void OnResize(int width, int height, ID3D12Resource* depthTexture, ID3D12Resource* normalTexture, ID3D12Resource* noiseTexture);
 	void ClearSSAO(ComPtr<ID3D12GraphicsCommandList> commandList);
 
-	MyTexture& GetTextureA(){
-		return SSAOTexture_A;
-	}
-
-	MyTexture& GetTextureB() {
-		return SSAOTexture_B;
-	}
-
-	ComPtr<ID3D12DescriptorHeap> GetSrvHeap() {
-		return srvHeap;
-	}
-
-	ComPtr<ID3D12DescriptorHeap> GetSamplerHeap() {
-		return samplerHeap;
-	}
-
-	ComPtr<ID3D12DescriptorHeap> GetRtvHeap() {
-		return rtvHeap;
-	}
+	MyTexture& GetTextureA();
+	MyTexture& GetTextureB();
+	ComPtr<ID3D12DescriptorHeap> GetSrvHeap();
+	ComPtr<ID3D12DescriptorHeap> GetSamplerHeap();
+	ComPtr<ID3D12DescriptorHeap> GetRtvHeap();
 };
 
 struct SsaoConstants
@@ -75,11 +53,3 @@ struct BlurConstants {
 	float blurType; //0.0f - horizontal blur, else - vertical blur
 	float padding;
 };
-
-
-
-
-
-
-
-#endif //SSAO_H_

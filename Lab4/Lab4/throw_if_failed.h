@@ -1,6 +1,4 @@
-#ifndef THROW_IF_FAILED_
-#define THROW_IF_FAILED_
-
+#pragma once
 #include <stdexcept>
 #include <string>
 #include <sstream>
@@ -20,5 +18,3 @@ inline void ThrowIfFailed(HRESULT hr, const char* file, int line, const char* fu
     }
 }
 #define ThrowIfFailed(x) ThrowIfFailed((x), __FILE__, __LINE__, __FUNCTION__)
-
-#endif //THROWIFFAILED

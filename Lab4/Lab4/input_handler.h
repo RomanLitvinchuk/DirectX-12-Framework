@@ -1,8 +1,8 @@
-#ifndef INPUT_HANDLER_
-#define INPUT_HANDLER_
-#include "command.h"
+#pragma once
 #include <memory>
+#include "command.h"
 
+struct Camera;
 
 class InputHandler {
 public: 
@@ -20,4 +20,3 @@ private:
 	std::unique_ptr<Command> buttonD;
 };
 
-#endif //INPUT_HANDLER_

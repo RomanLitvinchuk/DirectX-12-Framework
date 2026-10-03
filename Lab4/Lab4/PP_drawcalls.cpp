@@ -1,4 +1,5 @@
 #include "DX12App.h"
+#include "DirectXColors.h"
 
 void DX12App::DrawPPTonemap(MyTexture* readHDR) {
 	commandList->SetPipelineState(renderSystem->pp_tonemappingPSO_.Get());

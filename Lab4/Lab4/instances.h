@@ -1,9 +1,7 @@
-#ifndef INSTANCES_H_
-#define INSTANCES_H_
+#pragma once
 #include <SimpleMath.h>
 
-using namespace DirectX;
-using namespace SimpleMath;
+using namespace DirectX::SimpleMath;
 
 
 struct MeshInstanceData {
@@ -18,5 +16,3 @@ struct WireframeInstanceData {
     Vector4 color;
 };
 
-
-#endif //INSTANCES_H_

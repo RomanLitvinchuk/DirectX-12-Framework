@@ -51,7 +51,6 @@ void DX12App::CreateConstantBufferView() {
 	cbDesc.BufferLocation = cbAddress;
 	cbDesc.SizeInBytes = cbByteSize;
 	device->CreateConstantBufferView(&cbDesc, cbvSrvHeap->GetCPUDescriptorHandleForHeapStart());
-	std::cout << "Constant buffer view is created" << std::endl;
 }
 
 void DX12App::InitUAVBuffers()

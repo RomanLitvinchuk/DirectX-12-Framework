@@ -1,5 +1,48 @@
 #include "g_buffer.h"
 #include "DX12App.h"
+#include "singletone_device.h"
+#include "throw_if_failed.h"
+#include <DirectXColors.h>
+
+GBuffer::GBuffer(int width, int height) 
+{
+	device = SingletonDevice::GetDevice();
+	CreateHeaps();
+	CreateTextures(width, height);
+	CreateSRV();
+	CreateRTVandDSV();
+};
+
+GBufferTexture& GBuffer::GetDiffuseTex() 
+{
+	return diffuseTex;
+}
+
+GBufferTexture& GBuffer::GetNormalTex() 
+{
+	return normalTex;
+}
+
+GBufferTexture& GBuffer::GetDepthTex() 
+{
+	return depthTex;
+}
+
+ComPtr<ID3D12DescriptorHeap> GBuffer::GetSrvHeap() 
+{
+	return srvDescriptorHeap;
+}
+
+ComPtr<ID3D12DescriptorHeap> GBuffer::GetRtvHeap() 
+{
+	return rtvDescpritorHeap;
+}
+
+ComPtr<ID3D12DescriptorHeap> GBuffer::GetDsvHeap() 
+{
+	return dsvDescriptorHeap;
+}
+
 
 void GBuffer::CreateHeaps()
 {
@@ -23,7 +66,8 @@ void GBuffer::CreateHeaps()
 	ThrowIfFailed(device->CreateDescriptorHeap(&dsvDesc, IID_PPV_ARGS(&dsvDescriptorHeap)));
 }
 
-void GBuffer::CreateTextures(int width, int height) {
+void GBuffer::CreateTextures(int width, int height) 
+{
 	auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 	auto resDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM, width, height, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
 	D3D12_CLEAR_VALUE clearValue;
@@ -52,7 +96,8 @@ void GBuffer::CreateTextures(int width, int height) {
 	depthTex.Resource->SetName(L"Depth texture");
 }
 
-void GBuffer::CreateRTVandDSV() {
+void GBuffer::CreateRTVandDSV() 
+{
 	D3D12_RENDER_TARGET_VIEW_DESC rtvTexDesc = {};
 	rtvTexDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	rtvTexDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
@@ -77,7 +122,8 @@ void GBuffer::CreateRTVandDSV() {
 	device->CreateDepthStencilView(depthTex.Resource.Get(), &dsvTexDesc, depthTex.dsvHandle);
 }
 
-void GBuffer::CreateSRV() {
+void GBuffer::CreateSRV() 
+{
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvTexDesc = {};
 	srvTexDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	srvTexDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -99,7 +145,8 @@ void GBuffer::CreateSRV() {
 	device->CreateShaderResourceView(depthTex.Resource.Get(), &srvTexDesc, depthTex.srvHandle);
 }
 
-void GBuffer::TransitToOpaqueRenderingState(ComPtr<ID3D12GraphicsCommandList> commandList) {
+void GBuffer::TransitToOpaqueRenderingState(ComPtr<ID3D12GraphicsCommandList> commandList) 
+{
 	CD3DX12_RESOURCE_BARRIER diffuseBarrier = CD3DX12_RESOURCE_BARRIER::Transition(diffuseTex.Resource.Get(), D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE,
 		D3D12_RESOURCE_STATE_RENDER_TARGET);
 	CD3DX12_RESOURCE_BARRIER normalBarrier = CD3DX12_RESOURCE_BARRIER::Transition(normalTex.Resource.Get(), D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE,
@@ -111,7 +158,8 @@ void GBuffer::TransitToOpaqueRenderingState(ComPtr<ID3D12GraphicsCommandList> co
 	commandList->ResourceBarrier(3, barriers);
 }
 
-void GBuffer::TransitToLightsRenderingState(ComPtr<ID3D12GraphicsCommandList> commandList) {
+void GBuffer::TransitToLightsRenderingState(ComPtr<ID3D12GraphicsCommandList> commandList) 
+{
 	CD3DX12_RESOURCE_BARRIER diffuseBarrier = CD3DX12_RESOURCE_BARRIER::Transition(diffuseTex.Resource.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET,
 		D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
 	CD3DX12_RESOURCE_BARRIER normalBarrier = CD3DX12_RESOURCE_BARRIER::Transition(normalTex.Resource.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET,
@@ -122,14 +170,16 @@ void GBuffer::TransitToLightsRenderingState(ComPtr<ID3D12GraphicsCommandList> co
 	commandList->ResourceBarrier(3, barriers);
 }
 
-void GBuffer::OnResize(int width, int height) {
+void GBuffer::OnResize(int width, int height) 
+{
 	ResetTextures();
 	CreateTextures(width, height);
 	CreateRTVandDSV();
 	CreateSRV();
 }
 
-void GBuffer::ResetTextures() {
+void GBuffer::ResetTextures() 
+{
 	diffuseTex.Resource.Reset();
 	normalTex.Resource.Reset();
 	depthTex.Resource.Reset();

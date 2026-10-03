@@ -1,5 +1,4 @@
-#ifndef SCENE_DATA_H_
-#define SCENE_DATA_H_
+#pragma once
 #include "vertex.h"
 #include "submesh.h"
 #include "materials.h"
@@ -17,4 +16,3 @@ struct SceneData {
 	std::unordered_map<std::wstring, std::unique_ptr<Texture>> textures;
 };
 
-#endif //SCENE_DATA_H_

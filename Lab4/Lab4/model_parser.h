@@ -1,9 +1,14 @@
-#ifndef MODEL_PARSER_H_
-#define MODEL_PARSER_H_
-#include "scene_data.h"
-#include <assimp/cimport.h>
+#pragma once
 #include <assimp/scene.h>
-#include <assimp/postprocess.h>
+#include <Windows.h>
+#include <SimpleMath.h>
+
+using namespace DirectX::SimpleMath;
+
+struct SceneData;
+struct MaterialConstants;
+struct Submesh;
+struct Vertex;
 
 class ModelParser {
 public:
@@ -35,6 +40,3 @@ private:
 	void FindTreeMaterials(const std::string& filename, MaterialConstants& matConst, SceneData& sceneData);
 	void FindCubeMaterials(const std::string& filename, MaterialConstants& matConst, SceneData& sceneData);
 };
-
-
-#endif //MODEL_PARSER_H_

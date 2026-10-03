@@ -1,16 +1,10 @@
-#ifndef POST_PROCESS_
-#define POST_PROCESS_
+#pragma once
 #include <d3d12.h>
-#include <d3dx12.h>
 #include <wrl.h>
-#include <SimpleMath.h>
-#include "throw_if_failed.h"
 #include "texture.h"
-#include "singletone_device.h"
 
 
 using namespace Microsoft::WRL;
-using namespace DirectX;
 
 class PostProcess {
 
@@ -22,7 +16,7 @@ private:
 	ComPtr<ID3D12DescriptorHeap> srvHeap;
 	ComPtr<ID3D12DescriptorHeap> rtvHeap;
 
-	ComPtr<ID3D12Device> device = SingletonDevice::GetDevice();
+	ComPtr<ID3D12Device> device = nullptr;
 
 	void CreateHeaps();
 	void CreateTextures(int width, int height);
@@ -34,38 +28,13 @@ public:
 	void ClearPostProcess(ComPtr<ID3D12GraphicsCommandList> commandList);
 	void OnResize(int width, int height);
 
-	PostProcess(int width, int height) {
-		CreateHeaps();
-		CreateTextures(width, height);
-		CreateSRV();
-		CreateRTV();
-	}
+	PostProcess(int width, int height);
 
-	MyTexture& GetHdrTextureA() { 
-		return hdrTextureA; 
-	}
-
-	MyTexture& GetHdrTextureB() { 
-		return hdrTextureB; 
-	}
-
-	MyTexture& GetLdrTextureA() { 
-		return ldrTextureA; 
-	}
-
-	MyTexture& GetLdrTextureB() { 
-		return ldrTextureB; 
-	}
-
-	ComPtr<ID3D12DescriptorHeap> GetSrvHeap() { 
-		return srvHeap; 
-	}
-
-	ComPtr<ID3D12DescriptorHeap> GetRtvHeap() { 
-		return rtvHeap; 
-	}
+	MyTexture& GetHdrTextureA();
+	MyTexture& GetHdrTextureB();
+	MyTexture& GetLdrTextureA();
+	MyTexture& GetLdrTextureB();
+	ComPtr<ID3D12DescriptorHeap> GetSrvHeap();
+	ComPtr<ID3D12DescriptorHeap> GetRtvHeap();
 
 };
-
-
-#endif POST_PROCESS_

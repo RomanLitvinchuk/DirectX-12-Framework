@@ -1,4 +1,5 @@
 #include "input_handler.h"
+#include "camera.h"
 
 InputHandler::InputHandler() :
 	buttonW(std::make_unique<MoveForwardOrBackwardCommand>()),

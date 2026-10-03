@@ -1,10 +1,7 @@
-#ifndef CAMERA_H_
-#define CAMERA_H_
-
+#pragma once
 #include <Windows.h>
 #include <SimpleMath.h>
 #include <DirectXCollision.h>
-#include "game_timer.h"
 
 
 using namespace DirectX;
@@ -42,7 +39,5 @@ struct Camera {
 	XMMATRIX xmProj = XMMatrixIdentity();
 
 	BoundingFrustum frustum;
-	bool isFrustumCullingEnabled = true;
+	bool bIsFrustumCullingEnabled = true;
 };
-
-#endif //CAMERA_H_

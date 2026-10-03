@@ -90,11 +90,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			{
 				if (!ImGui::GetIO().WantCaptureKeyboard)
 				{
-					MyFramework.m_key_states[virtualKey] = keyDown;
+					MyFramework.keyStates[virtualKey] = keyDown;
 				}
 				else if (keyDown)
 				{
-					MyFramework.m_key_states[virtualKey] = false;
+					MyFramework.keyStates[virtualKey] = false;
 				}
 			}
             if (virtualKey == 'F' && keyDown) {

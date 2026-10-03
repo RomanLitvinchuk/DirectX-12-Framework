@@ -1,5 +1,4 @@
-#ifndef SIMULATE_PARTICLE_
-#define SIMULATE_PARTICLE_
+#pragma once
 #include <SimpleMath.h>
 
 using namespace DirectX::SimpleMath;
@@ -26,6 +25,3 @@ struct CSParticle {
 	UINT neighborOffset;
 	UINT neighborCount;
 };
-
-
-#endif //SIMULATE_PARTICLE

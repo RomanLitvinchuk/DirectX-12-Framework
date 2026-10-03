@@ -1,7 +1,8 @@
-#define _WINDOW_CLASS_
+#pragma once
 #include <Windows.h>
-#include "game_timer.h"
-#include "DX12App.h"
+
+class GameTimer;
+
 class WindowClass 
 {
 private:

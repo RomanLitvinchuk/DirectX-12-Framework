@@ -2,13 +2,18 @@
 #include "d3dx12.h"
 #include <iostream>
 #include <string>
-#include <DirectXColors.h>
 #include <SimpleMath.h>
 #include "d3dUtil.h"
 #include "vertex.h"
 #include <filesystem>
-#include <numeric>
-#include <limits>
+#include "DDSTextureLoader.h"
+#include "model_parser.h"
+#include "throw_if_failed.h"
+#include "imgui.h"
+#include "imgui_impl_dx12.h"
+#include "imgui_impl_win32.h"
+#include "singletone_device.h"
+#include <unordered_map>
 
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
@@ -117,6 +122,8 @@ void DX12App::BuildImGui() {
 	ImGui::Separator();
 	ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
 	ImGui::Text("Frame time: %.3f ms", 1000.0f / ImGui::GetIO().Framerate);
+	ImGui::Separator();
+	ImGui::Checkbox("Frustum culling", &camera.bIsFrustumCullingEnabled);
 	ImGui::End();
 }
 
@@ -426,4 +433,81 @@ void DX12App::BuildOctree() {
 	visibleIndices.reserve(sceneData.submeshes.size());
 	octree.Build(sceneData.submeshes);
 }
+
+#define RESERVED_TEXTURES 1
+
+void DX12App::LoadTextures()
+{
+	ThrowIfFailed(commandList->Reset(commandAllocator.Get(), nullptr));
+	UINT index = RESERVED_TEXTURES + 1;
+
+	for (auto& entry : std::filesystem::directory_iterator(L"textures"))
+	{
+		auto path = entry.path();
+		if (path.extension() != L".dds") continue;
+
+		std::wstring name = path.stem().wstring();
+		std::transform(name.begin(), name.end(), name.begin(), ::towlower);
+
+		auto tex = std::make_unique<Texture>();
+		tex->name_ = std::string(name.begin(), name.end());
+		tex->filepath = path.wstring();
+		if (tex->name_.find("noise") != std::string::npos) {
+			tex->srvHeapIndex = 1;
+			tex->isSRGB = false;
+		}
+		else tex->srvHeapIndex = index++;
+
+		ThrowIfFailed(CreateDDSTextureFromFile12(
+			device.Get(),
+			commandList.Get(),
+			tex->filepath.c_str(),
+			tex->Resource,
+			tex->UploadHeap));
+
+		std::wcout << L"Loaded texture: [" << name << L"] to index: " << tex->srvHeapIndex << std::endl;
+
+		sceneData.textures[name] = std::move(tex);
+	}
+
+	ThrowIfFailed(commandList->Close());
+	ID3D12CommandList* lists[] = { commandList.Get() };
+	commandQueue->ExecuteCommandLists(1, lists);
+	FlushCommandQueue();
+}
+
+void DX12App::Parsing() {
+	ModelParser parser;
+	parser.ParseFile("models/sponza.obj", Matrix::Identity, 1, sceneData);
+
+	Matrix Transform = Matrix::CreateScale(0.2f) * Matrix::CreateRotationX(-3.14 / 2) * Matrix::CreateTranslation(0.0f, 0.0f, 0.0f);
+	parser.ParseFile("models/Christmas Tree Color mm.obj", Transform, 1, sceneData);
+
+	Transform = Matrix::CreateScale(25.0f) * Matrix::CreateTranslation(100.0f, 500.0f, 0.0f);
+	parser.ParseFile("models/Sketchfab.fbx", Transform, 1, sceneData);
+
+	Transform = Matrix::CreateScale(30.0f) * Matrix::CreateTranslation(400.0f, 200.0f, 0.0f);
+	parser.ParseFile("models/HydraMoonSimpleCube.fbx", Transform, 1, sceneData);
+
+	Transform = Matrix::CreateScale(30.0f) * Matrix::CreateTranslation(700.0f, 0.0f, 0.0f);
+	parser.ParseFile("models/Minecraft Tree.obj", Transform, 1, sceneData);
+}
+
+void DX12App::InitShadowMap() {
+	shadowMap = std::make_unique<ShadowMap>(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
+
+	auto handle = renderSystem->g_buffer->GetSrvHeap()->GetCPUDescriptorHandleForHeapStart();
+	auto size = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	CD3DX12_CPU_DESCRIPTOR_HANDLE smHandle(handle, 4, size);
+
+	auto gpuHandle = renderSystem->g_buffer->GetSrvHeap()->GetGPUDescriptorHandleForHeapStart();
+	CD3DX12_GPU_DESCRIPTOR_HANDLE smGpuHandle(gpuHandle, 4, size);
+
+	auto dsvHandle = dsvHeap->GetCPUDescriptorHandleForHeapStart();
+	size = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+	CD3DX12_CPU_DESCRIPTOR_HANDLE smDsvHandle(dsvHandle, 1, size);
+
+	shadowMap->BuildDescriptors(smHandle, smGpuHandle, smDsvHandle);
+}
+
  

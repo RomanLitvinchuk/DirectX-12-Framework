@@ -1,8 +1,5 @@
-#ifndef MATERIALS_H_
-#define NATERIALS_H_
-#include <d3d12.h>
+#pragma once
 #include <SimpleMath.h>
-#include <string>
 
 using namespace DirectX;
 using namespace SimpleMath;
@@ -41,5 +38,3 @@ struct MaterialConstants
 //static_assert(sizeof(MaterialConstants) == 160,
 //    "MaterialConstants should be 160 bytes (16*5 + 4*3 + 4 + 64)");
 
-
-#endif //MATERIALS_H_

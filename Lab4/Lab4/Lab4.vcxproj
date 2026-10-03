@@ -140,6 +140,7 @@
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="cascades.cpp" />
     <ClCompile Include="CBV_SRV_UAV.cpp" />
+    <ClCompile Include="command.cpp" />
     <ClCompile Include="d3dUtil.cpp" />
     <ClCompile Include="DDSTextureLoader.cpp" />
     <ClCompile Include="deffered_rendering.cpp" />

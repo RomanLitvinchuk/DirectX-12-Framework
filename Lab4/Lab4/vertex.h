@@ -1,12 +1,7 @@
-#ifndef VERTEX_H_
-#define VERTEX_H_
+#pragma once
 #include <SimpleMath.h>
-#include <d3d12.h>
-#include <fstream>
-#include <sstream>
 
-using namespace DirectX;
-using namespace SimpleMath;
+using namespace DirectX::SimpleMath;
 
 struct Vertex
 {
@@ -25,5 +20,3 @@ struct BakedVertex
     Vector3 uv;
     Vector3 tangentW;
 };
-
-#endif //VERTEX_H_

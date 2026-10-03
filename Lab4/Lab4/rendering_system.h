@@ -1,21 +1,20 @@
-#ifndef RENDERING_SYSTEM_
-#define RENDERING_SYSTEM_
-
+#pragma once
 #include <d3d12.h>
 #include <wrl.h>
-#include "g_buffer.h"
 #include "light.h"
-#include "post_process.h"
 #include <SimpleMath.h>
-#include "ssao.h"
-#include "singletone_device.h"
+#include <memory>
+
+class GBuffer;
+class PostProcess;
+class SSAO;
 
 using namespace Microsoft::WRL;
 using namespace DirectX::SimpleMath;
 
 class RenderingSystem {
 private:
-	ComPtr<ID3D12Device> device = SingletonDevice::GetDevice();
+	ComPtr<ID3D12Device> device = nullptr;
 
 	void BuildLayouts();
 	void CompileShaders();
@@ -153,98 +152,5 @@ public:
 	std::vector<D3D12_INPUT_ELEMENT_DESC> bakedLayout_;
 	std::vector<D3D12_INPUT_ELEMENT_DESC> wireframeLayout_;
 
-	RenderingSystem(int width, int height, ID3D12Resource* noiseTexture) {
-		BuildLayouts();
-		CreateOpaqueRS();
-		CompileShaders();
-		CreateOpaquePSO(inputLayout_);
-
-		CreateStreamOutputRS();
-		CreateStreamOutputPSO(inputLayout_);
-		CreateBakedPSO(bakedLayout_);
-
-		CreateLightRS();
-		CreateLightPSO();
-
-		CreateWireframeRS();
-		CreateWireframePSO(wireframeLayout_);
-
-		CreateParticleRS();
-		CreateParticlePSO();
-
-		CreateParticlesUpdateRS();
-		CreateParticlesUpdatePSO();
-		CreateParticlesEmitRS();
-		CreateParticlesEmitPSO();
-
-		CreateShadowRS();
-		CreateShadowPSO(inputLayout_);
-
-		CreateSSAORS();
-		CreateSSAOPSO();
-
-		CreateSSAOBlurRS();
-		CreateSSAOBlurPSO();
-
-		CreateBillboardRS();
-		CreateBillboardPSO();
-
-		g_buffer = std::make_unique<GBuffer>(width, height);
-		post_process = std::make_unique<PostProcess>(width, height);
-		ssao = std::make_unique<SSAO>(width / 2, height / 2, g_buffer->GetDepthTex().Resource.Get(), g_buffer->GetNormalTex().Resource.Get(), noiseTexture);
-
-		LightConstants sun = {};
-		sun.lightType = 0; // Directional
-		sun.lightDirection = { 0.0f, -1.0f, 0.0f };
-		sun.lightColor = { 1.0f, 0.9f, 0.8f };
-		sceneLights_.push_back(sun);
-
-		GenerateTreeLights(sceneLights_, { 10.0f, 0.0f, -60.0f }, 350.0f, 100.0f, 500);
-
-		CreateBulbRS();
-		CreateBulbPSO(inputLayout_);
-
-		CreatePPDefaultRS();
-		CreatePPTonemappingPSO();
-		CreatePPVignettePSO();
-		CreatePPOutputPSO();
-
-
-
-		D3D12_DESCRIPTOR_HEAP_DESC sampHeapDesc = {};
-		sampHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-		sampHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
-		sampHeapDesc.NumDescriptors = 2;
-		ThrowIfFailed(device->CreateDescriptorHeap(&sampHeapDesc, __uuidof(ID3D12DescriptorHeap), (void**)&samplerHeap));
-
-		D3D12_SAMPLER_DESC sampDesc = {};
-		sampDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-		sampDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-		sampDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-		sampDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-		sampDesc.MinLOD = 0;
-		sampDesc.MaxLOD = D3D12_FLOAT32_MAX;
-		sampDesc.MipLODBias = 0.0f;
-		sampDesc.MaxAnisotropy = 1;
-		sampDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-		device->CreateSampler(&sampDesc, samplerHeap->GetCPUDescriptorHandleForHeapStart());
-
-		sampDesc.Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
-		sampDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
-		sampDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-		sampDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-		sampDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-		sampDesc.BorderColor[0] = 1.0f;
-		sampDesc.BorderColor[1] = 1.0f;
-		sampDesc.BorderColor[2] = 1.0f;
-		sampDesc.BorderColor[3] = 1.0f;
-
-		auto handle = samplerHeap->GetCPUDescriptorHandleForHeapStart();
-		auto size = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
-		CD3DX12_CPU_DESCRIPTOR_HANDLE smpHandle(handle, 1, size);
-		device->CreateSampler(&sampDesc, smpHandle);
-	}
+	RenderingSystem(int width, int height, ID3D12Resource* noiseTexture);
 };
-
-
-#endif //RENDERING_SYSTEM_

@@ -1,10 +1,6 @@
-#ifndef BUFFER_H_
-#define BUFFER_H_
-
+#pragma once
 #include "d3dUtil.h"
 #include "throw_if_failed.h"
-#include "object_constants.h"
-#include <iostream>
 
 using namespace Microsoft::WRL;
 
@@ -30,7 +26,6 @@ public:
             IID_PPV_ARGS(&mUploadBuffer)));
 
         ThrowIfFailed(mUploadBuffer->Map(0, nullptr, reinterpret_cast<void**>(&mMappedData)));
-        std::cout << "Constant buffer is created" << std::endl;
     }
 
     UploadBuffer(const UploadBuffer& rhs) = delete;
@@ -60,5 +55,3 @@ private:
     UINT mElementByteSize = 0;
     bool mIsConstantBuffer = false;
 };
-
-#endif //UPLOADBUFFER_H_

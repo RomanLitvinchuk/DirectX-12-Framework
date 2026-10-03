@@ -1,10 +1,8 @@
-#ifndef PBF_SIMULATOR_
-#define PBF_SIMULATOR_
+#pragma once
 #include <wrl.h>
 #include <d3d12.h>
 #include <memory>
 #include "pbf_constants.h"
-#include "simulate_particles.h"
 #include "upload_buffer.h"
 
 using Microsoft::WRL::ComPtr;
@@ -27,6 +25,3 @@ private:
 	uint32_t currentBuffer;
 
 };
-
-
-#endif PBF_SIMULATOR_

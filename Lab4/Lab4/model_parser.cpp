@@ -1,67 +1,12 @@
-﻿#include "DX12App.h"
+﻿#include "model_parser.h"
 #include <filesystem>
-#include "DDSTextureLoader.h"
-#include "model_parser.h"
-
-#define RESERVED_TEXTURES 1
-
-void DX12App::LoadTextures()
-{
-	ThrowIfFailed(commandList->Reset(commandAllocator.Get(), nullptr));
-	UINT index = RESERVED_TEXTURES + 1;
-
-	for (auto& entry : std::filesystem::directory_iterator(L"textures"))
-	{
-		auto path = entry.path();
-		if (path.extension() != L".dds") continue;
-
-		std::wstring name = path.stem().wstring();
-		std::transform(name.begin(), name.end(), name.begin(), ::towlower);
-
-		auto tex = std::make_unique<Texture>();
-		tex->name_ = std::string(name.begin(), name.end());
-		tex->filepath = path.wstring();
-		if (tex->name_.find("noise") != std::string::npos) {
-			tex->srvHeapIndex = 1;
-			tex->isSRGB = false;
-		}
-		else tex->srvHeapIndex = index++;
-
-		ThrowIfFailed(CreateDDSTextureFromFile12(
-			device.Get(),
-			commandList.Get(),
-			tex->filepath.c_str(),
-			tex->Resource,
-			tex->UploadHeap));
-
-		std::wcout << L"Loaded texture: [" << name << L"] to index: " << tex->srvHeapIndex << std::endl;
-
-		sceneData.textures[name] = std::move(tex);
-	}
-
-	ThrowIfFailed(commandList->Close());
-	ID3D12CommandList* lists[] = { commandList.Get() };
-	commandQueue->ExecuteCommandLists(1, lists);
-	FlushCommandQueue();
-}
-
-void DX12App::Parsing() {
-	ModelParser parser;
-	parser.ParseFile("models/sponza.obj", Matrix::Identity, 1, sceneData);
-
-	Matrix Transform = Matrix::CreateScale(0.2f) * Matrix::CreateRotationX(-3.14 / 2) * Matrix::CreateTranslation(0.0f, 0.0f, 0.0f);
-	parser.ParseFile("models/Christmas Tree Color mm.obj", Transform, 1, sceneData);
-
-	Transform = Matrix::CreateScale(25.0f) * Matrix::CreateTranslation(100.0f, 500.0f, 0.0f);
-	parser.ParseFile("models/Sketchfab.fbx", Transform, 1, sceneData);
-
-	Transform = Matrix::CreateScale(30.0f) * Matrix::CreateTranslation(400.0f, 200.0f, 0.0f);
-	parser.ParseFile("models/HydraMoonSimpleCube.fbx", Transform, 1, sceneData);
-
-	Transform = Matrix::CreateScale(30.0f) * Matrix::CreateTranslation(700.0f, 0.0f, 0.0f);
-	parser.ParseFile("models/Minecraft Tree.obj", Transform, 1, sceneData);
-}
-
+#include "scene_data.h"
+#include <iostream>
+#include <assimp/postprocess.h>
+#include <assimp/cimport.h>
+#include "materials.h"
+#include "vertex.h"
+#include "submesh.h"
 
 
 void ModelParser::ParseFile(const std::string& filename, const Matrix& transform, UINT instanceCount, SceneData& sceneData) {

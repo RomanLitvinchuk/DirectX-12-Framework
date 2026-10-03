@@ -1,10 +1,7 @@
-#ifndef LIGHT_H_
-#define LIGHT_H_
-
+#pragma once
 #include <SimpleMath.h>
 
-using namespace DirectX;
-using namespace SimpleMath;
+using namespace DirectX::SimpleMath;
 
 struct LightConstants {
 	Vector3 lightColor;
@@ -27,5 +24,3 @@ struct CameraConstants {
 	float padding;
 };
 
-
-#endif //LIGHT_H_

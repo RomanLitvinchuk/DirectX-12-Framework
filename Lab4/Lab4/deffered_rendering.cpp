@@ -151,7 +151,7 @@ void DX12App::DrawToGBuffer() {
 		D3D12_GPU_VIRTUAL_ADDRESS matAddress = materialBuffer->Resource()->GetGPUVirtualAddress() + matIndex * matSize;
 		commandList->SetGraphicsRootConstantBufferView(3, matAddress);
 
-		treeIsVisible = sceneData.materials[matIndex].isTree == 1;
+		bIsTreeVisible = sceneData.materials[matIndex].isTree == 1;
 		int texHeapIndex = sceneData.materials[matIndex].diffuseTextureIndex + 1;
 
 		CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(
@@ -186,7 +186,7 @@ void DX12App::DrawToGBuffer() {
 
 void DX12App::GetVisibleObjects() {
 	visibleIndices.clear();
-	if (camera.isFrustumCullingEnabled)
+	if (camera.bIsFrustumCullingEnabled)
 	{
 		octree.GetVisibleObjects(camera.frustum, sceneData.submeshes, visibleIndices);
 	}
@@ -350,12 +350,12 @@ void DX12App::Draw()
 	MyTexture* ppWriteTexture = &renderSystem->post_process->GetHdrTextureA();
 	MyTexture* ppReadTexture = &renderSystem->post_process->GetHdrTextureB();
 
-	treeIsVisible = false;
+	bIsTreeVisible = false;
 
-	if (isFirstFrame) {
+	if (bIsFirstFrame) {
 		DrawToStreamOutput();
 		ThrowIfFailed(commandList->Reset(commandAllocator.Get(), renderSystem->opaquePSO_.Get()));
-		isFirstFrame = false;
+		bIsFirstFrame = false;
 	}
 	DrawToGBuffer();
 	renderSystem->g_buffer->TransitToLightsRenderingState(commandList);
@@ -364,10 +364,10 @@ void DX12App::Draw()
 	commandList->ResourceBarrier(1, &barrier);
 	DrawLights();
 
-	if (treeIsVisible) DrawNYBalls();
+	if (bIsTreeVisible) DrawNYBalls();
 
 	bool isEmitterInside = true;
-	if (camera.isFrustumCullingEnabled) {
+	if (camera.bIsFrustumCullingEnabled) {
 		ContainmentType type = camera.frustum.Contains(emitter.bounds);
 		if (type == ContainmentType::DISJOINT) {
 			isEmitterInside = false;

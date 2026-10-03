@@ -1,7 +1,50 @@
 #include "post_process.h"
 #include "d3dUtil.h"
+#include "singletone_device.h"
+#include "throw_if_failed.h"
+#include "d3dx12.h"
 
-void PostProcess::CreateHeaps() {
+PostProcess::PostProcess(int width, int height) 
+{
+	device = SingletonDevice::GetDevice();
+	CreateHeaps();
+	CreateTextures(width, height);
+	CreateSRV();
+	CreateRTV();
+}
+
+MyTexture& PostProcess::GetHdrTextureA() 
+{
+	return hdrTextureA;
+}
+
+MyTexture& PostProcess::GetHdrTextureB() 
+{
+	return hdrTextureB;
+}
+
+MyTexture& PostProcess::GetLdrTextureA() 
+{
+	return ldrTextureA;
+}
+
+MyTexture& PostProcess::GetLdrTextureB() 
+{
+	return ldrTextureB;
+}
+
+ComPtr<ID3D12DescriptorHeap> PostProcess::GetSrvHeap() 
+{
+	return srvHeap;
+}
+
+ComPtr<ID3D12DescriptorHeap> PostProcess::GetRtvHeap() 
+{
+	return rtvHeap;
+}
+
+void PostProcess::CreateHeaps() 
+{
 	D3D12_DESCRIPTOR_HEAP_DESC descHeap = {};
 	descHeap.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	descHeap.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
@@ -13,7 +56,8 @@ void PostProcess::CreateHeaps() {
 	ThrowIfFailed(device->CreateDescriptorHeap(&descHeap, IID_PPV_ARGS(&rtvHeap)));
 }
 
-void PostProcess::CreateTextures(int width, int height) {
+void PostProcess::CreateTextures(int width, int height) 
+{
 	D3D12_RESOURCE_DESC resDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R16G16B16A16_FLOAT, width, height, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
 	D3D12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 	D3D12_CLEAR_VALUE clearValue;
@@ -41,7 +85,8 @@ void PostProcess::CreateTextures(int width, int height) {
 	ldrTextureB.currentState = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 } 
 
-void PostProcess::CreateSRV() {
+void PostProcess::CreateSRV() 
+{
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;

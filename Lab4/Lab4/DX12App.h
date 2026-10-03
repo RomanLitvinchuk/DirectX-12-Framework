@@ -1,6 +1,4 @@
-#ifndef DX12APP_
-#define DX12APP_
-
+#pragma once
 #include <Windows.h>
 #include <d3d12.h>
 #include <DirectXHelpers.h>
@@ -9,29 +7,19 @@
 #include <comdef.h>
 #include <DescriptorHeap.h>
 #include <d3dx12.h>
-#include "throw_if_failed.h"
 #include "game_timer.h"
 #include "upload_buffer.h"
 #include "object_constants.h"
 #include "g_buffer.h"
 #include "rendering_system.h"
 #include "light.h"
-#include <unordered_map>
-#include <assimp/cimport.h>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
 #include "camera.h"
-#include <DirectXCollision.h>
 #include "octree.h"
 #include "particle.h"
 #include "shadow_map.h"
 #include "ssao.h"
-#include "singletone_device.h"
 #include "scene_data.h"
 #include "input_handler.h"
-#include "imgui.h"
-#include "imgui_impl_dx12.h"
-#include "imgui_impl_win32.h"
 
 
 using namespace Microsoft::WRL;
@@ -122,7 +110,7 @@ public:
 		clientHeight = newHeight;
 	}
 
-	bool m_key_states[256] = { false };
+	bool keyStates[256] = { false };
 
 	int GetClientWidth() { return clientWidth; }
 	int GetClientHeight() { return clientHeight; }
@@ -231,7 +219,7 @@ private:
 	BVH octree;
 
 	std::vector<UINT> visibleIndices;
-	bool treeIsVisible;
+	bool bIsTreeVisible;
 
 	std::vector<int> meshesMaterialIndex;
 
@@ -261,11 +249,9 @@ private:
 	ComPtr<ID3D12Resource> filledSizeBuffer = nullptr;
 	ComPtr<ID3D12Resource> readbackBuffer = nullptr;
 	D3D12_STREAM_OUTPUT_BUFFER_VIEW streamOutputBufferView = {};
-	bool isFirstFrame = true;
+	bool bIsFirstFrame = true;
 
 	std::unique_ptr<ShadowMap> shadowMap;
 	float SHADOW_MAP_SIZE = 8192.0f;
 	CascadeData cascades;
 };
-
-#endif //DX12APP_

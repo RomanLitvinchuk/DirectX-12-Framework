@@ -1,5 +1,4 @@
-#ifndef TEXTURE_H_
-#define TEXTURE_H_
+#pragma once
 #include <string>
 #include <d3d12.h>
 #include <wrl.h>
@@ -24,4 +23,3 @@ struct MyTexture {
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle;
 };
 
-#endif TEXTURE_H_

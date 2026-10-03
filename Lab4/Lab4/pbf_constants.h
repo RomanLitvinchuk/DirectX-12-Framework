@@ -1,5 +1,4 @@
-#ifndef PBF_CONSTANTS_
-#define PBF_CONSTANTS_
+#pragma once
 
 struct PBFConstants {
 	float dt;
@@ -33,5 +32,3 @@ struct PBFConstants {
 	float cellSize;
 };
 
-
-#endif //PBF_CONSTANTS_

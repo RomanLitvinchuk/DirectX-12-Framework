@@ -1,6 +1,6 @@
-#ifndef PARTICLE_H_
-#define PARTICLE_H_
+#pragma once
 #include <SimpleMath.h>
+#include <DirectXCollision.h>
 
 using namespace DirectX::SimpleMath;
 
@@ -30,5 +30,3 @@ struct Emitter {
 	Vector3 Position;
 	BoundingBox bounds;
 };
-
-#endif //PARTICLE_H_

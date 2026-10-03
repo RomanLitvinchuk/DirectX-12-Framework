@@ -12,7 +12,7 @@ void DX12App::Update() {
 	float dt = gt.DeltaTime();
 	float speed = camera.mCameraSpeed * dt;
 
-	inputHandler.handleInput(m_key_states, camera, speed);
+	inputHandler.handleInput(keyStates, camera, speed);
 
 	camera.UpdateViewMatrix();
 	UpdateMatricesData();
@@ -50,7 +50,7 @@ void DX12App::UpdateParticleData() {
 }
 
 void DX12App::UpdateFrustumData() {
-	if (camera.isFrustumCullingEnabled) {
+	if (camera.bIsFrustumCullingEnabled) {
 		XMVECTOR pos = XMLoadFloat3(&camera.mCameraPos);
 		XMVECTOR target = pos + XMLoadFloat3(&camera.mCameraTarget);
 		XMVECTOR up = XMLoadFloat3(&camera.mCameraUp);
@@ -138,7 +138,7 @@ void DX12App::UpdateShadowData() {
 	for (int i = 0; i < numCascades; ++i) {
 		ShadowConstants shadowData = {};
 		shadowData.lightViewProj = cascades.viewProjMats[i];
-		shadowData.shadowTransform_ = cascades.shadowTransform[i];
+		shadowData.shadowTransform = cascades.shadowTransform[i];
 		shadowData.cascadeDistances = Vector4(cascades.distances[0], cascades.distances[1], cascades.distances[2], 0.0f);
 		shadowBuffer->CopyData(i, shadowData);
 	}

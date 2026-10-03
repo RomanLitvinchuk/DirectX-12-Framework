@@ -1,5 +1,4 @@
-#ifndef SINGLETONE_DEVICE_
-#define SINGLETONE_DEVICE_
+#pragma once
 #include <d3d12.h>
 #include "wrl.h"
 #include "throw_if_failed.h"
@@ -23,5 +22,3 @@ public:
 	}
 };
 
-
-#endif SINGLETONE_DEVICE_

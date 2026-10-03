@@ -1,6 +1,6 @@
-#ifndef COMMAND_H_
-#define COMMAND_H_
-#include "camera.h"
+#pragma once
+
+struct Camera;
 
 class Command {
 public:
@@ -10,16 +10,10 @@ public:
 
 class MoveForwardOrBackwardCommand : public Command {
 public:
-	virtual void Execute(Camera& camera, float speed) {
-		camera.MoveBy(camera.mCameraTarget * speed);
-	}
+	void Execute(Camera& camera, float speed) override;
 };
 
 class MoveLeftOrRightCommand : public Command {
-	virtual void Execute(Camera& camera, float speed) {
-		camera.MoveBy(camera.mCameraTarget.Cross(camera.mCameraUp) * speed);
-	}
+	void Execute(Camera& camera, float speed) override;
 };
 
-
-#endif //COMMAND_H_

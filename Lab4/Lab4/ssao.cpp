@@ -1,4 +1,41 @@
+#include "ssao.h"
 #include "DX12App.h"
+#include "throw_if_failed.h"
+#include "singletone_device.h"
+
+SSAO::SSAO(int width, int height, ID3D12Resource* depthTexture, ID3D12Resource* normalTexture, ID3D12Resource* noiseTexture) {
+	device = SingletonDevice::GetDevice();
+	CreateHeaps();
+	CreateTexture(width, height);
+	CreateRTV();
+	CreateSRV(depthTexture, normalTexture, noiseTexture);
+	CreateSamplers();
+}
+
+MyTexture& SSAO::GetTextureA() 
+{
+	return SSAOTexture_A;
+}
+
+MyTexture& SSAO::GetTextureB() 
+{
+	return SSAOTexture_B;
+}
+
+ComPtr<ID3D12DescriptorHeap> SSAO::GetSrvHeap() 
+{
+	return srvHeap;
+}
+
+ComPtr<ID3D12DescriptorHeap> SSAO::GetSamplerHeap() 
+{
+	return samplerHeap;
+}
+
+ComPtr<ID3D12DescriptorHeap> SSAO::GetRtvHeap() 
+{
+	return rtvHeap;
+}
 
 void SSAO::CreateHeaps() {
 	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};

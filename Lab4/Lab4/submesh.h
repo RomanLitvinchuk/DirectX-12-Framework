@@ -1,7 +1,4 @@
-#ifndef SUBMESH_H_
-#define SUBMESH_H_
-
-#include <d3d12.h>
+#pragma once
 #include <DirectXCollision.h>
 #include <SimpleMath.h>
 #include <string>
@@ -35,4 +32,3 @@ struct Submesh
     int shadowInstanceOffset = 0;
 };
 
-#endif
