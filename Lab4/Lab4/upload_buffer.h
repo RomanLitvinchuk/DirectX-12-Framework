@@ -1,6 +1,7 @@
 #pragma once
 #include "d3dUtil.h"
 #include "throw_if_failed.h"
+#include "d3dx12.h"
 
 using namespace Microsoft::WRL;
 

@@ -22,7 +22,7 @@ void DX12App::CreateSOBuffers() {
 	CD3DX12_RESOURCE_BARRIER soBarrier = CD3DX12_RESOURCE_BARRIER::Transition(streamOutputBuffer.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_STREAM_OUT);
 	CD3DX12_RESOURCE_BARRIER fsBarrier = CD3DX12_RESOURCE_BARRIER::Transition(filledSizeBuffer.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_STREAM_OUT);
 	D3D12_RESOURCE_BARRIER barriers[] = { soBarrier, fsBarrier };
-	commandList->Reset(commandAllocator.Get(), nullptr);
+	commandList->Reset(currentFrameResource->cmdListAlloc.Get(), nullptr);
 	commandList->ResourceBarrier(2, barriers);
 	commandList->Close();
 	ID3D12CommandList* cmdsLists[] = { commandList.Get() };
@@ -53,7 +53,7 @@ void DX12App::DrawToStreamOutput()
 		2,
 		samplerHeap->GetGPUDescriptorHandleForHeapStart());
 
-	commandList->SetGraphicsRootConstantBufferView(6, hullBuffer->Resource()->GetGPUVirtualAddress());
+	commandList->SetGraphicsRootConstantBufferView(6, currentFrameResource->hullBuffer->Resource()->GetGPUVirtualAddress());
 
 	for (auto& sm : sceneData.submeshes) {
 		if (sm.name_.find("Sketchfab") != std::string::npos) {
@@ -63,7 +63,7 @@ void DX12App::DrawToStreamOutput()
 	}
 	UINT matIndex = streamOutputMesh.materialIndex;
 	UINT matSize = d3dUtil::CalcConstantBufferSize(sizeof(MaterialConstants));
-	D3D12_GPU_VIRTUAL_ADDRESS matAddress = materialBuffer->Resource()->GetGPUVirtualAddress() + matIndex * matSize;
+	D3D12_GPU_VIRTUAL_ADDRESS matAddress = currentFrameResource->materialBuffer->Resource()->GetGPUVirtualAddress() + matIndex * matSize;
 	commandList->SetGraphicsRootConstantBufferView(3, matAddress);
 
 	int texHeapIndex = sceneData.materials[matIndex].diffuseTextureIndex + 1;
@@ -93,10 +93,10 @@ void DX12App::DrawToStreamOutput()
 	commandList->SetGraphicsRootDescriptorTable(4, normHandle);
 
 	for (int i = 0; i < streamOutputMesh.InstanceCount; i++) {
-		instanceBuffer->CopyData(i, streamOutputMesh.instances[i]);
+		currentFrameResource->instanceBuffer->CopyData(i, streamOutputMesh.instances[i]);
 	}
 
-	commandList->SetGraphicsRootShaderResourceView(7, instanceBuffer->Resource()->GetGPUVirtualAddress());
+	commandList->SetGraphicsRootShaderResourceView(7, currentFrameResource->instanceBuffer->Resource()->GetGPUVirtualAddress());
 
 	D3D12_STREAM_OUTPUT_BUFFER_VIEW soViews[] = { streamOutputBufferView };
 	commandList->SOSetTargets(0, 1, soViews);

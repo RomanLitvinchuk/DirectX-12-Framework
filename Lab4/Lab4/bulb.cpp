@@ -55,8 +55,8 @@ void DX12App::BuildBulbGeometry() {
     std::vector<BulbVertex> vertices;
     std::vector<uint16_t> indices;
 
-    ThrowIfFailed(commandAllocator->Reset());
-    ThrowIfFailed(commandList->Reset(commandAllocator.Get(), nullptr));
+    ThrowIfFailed(currentFrameResource->cmdListAlloc->Reset());
+    ThrowIfFailed(commandList->Reset(currentFrameResource->cmdListAlloc.Get(), nullptr));
 
     CreateSphereGeometry(10.0f, 16, 16, vertices, indices);
     sphereIndexCount = (UINT)indices.size();

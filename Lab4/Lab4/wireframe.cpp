@@ -9,7 +9,7 @@ void DX12App::DrawWireframe()
 	commandList->IASetVertexBuffers(0, 1, &wireframeVertexBufferView);
 	commandList->IASetIndexBuffer(&wireframeIndexBufferView);
 
-	commandList->SetGraphicsRootConstantBufferView(0, objectsUploadBuffer->Resource()->GetGPUVirtualAddress());
+	commandList->SetGraphicsRootConstantBufferView(0, currentFrameResource->objectsUploadBuffer->Resource()->GetGPUVirtualAddress());
 
 	D3D12_CPU_DESCRIPTOR_HANDLE rtv = renderSystem->post_process->GetHdrTextureA().rtvHandle;
 	auto dsv = renderSystem->g_buffer->GetDepthTex().dsvHandle;
@@ -28,10 +28,10 @@ void DX12App::DrawWireframe()
 		data.center = allNodes[i]->bounds.Center;
 		data.extents = allNodes[i]->bounds.Extents;
 		data.color = Vector4(0.0f, 1.0f, 0.0f, 1.0f);
-		wireframeInstanceBuffer->CopyData(i, data);
+		currentFrameResource->wireframeInstanceBuffer->CopyData(i, data);
 	}
 
-	commandList->SetGraphicsRootShaderResourceView(1, wireframeInstanceBuffer->Resource()->GetGPUVirtualAddress());
+	commandList->SetGraphicsRootShaderResourceView(1, currentFrameResource->wireframeInstanceBuffer->Resource()->GetGPUVirtualAddress());
 
 	commandList->DrawIndexedInstanced(24, numInstances, 0, 0, 0);
 }

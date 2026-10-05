@@ -15,6 +15,7 @@ void DX12App::Update() {
 	inputHandler.handleInput(keyStates, camera, speed);
 
 	camera.UpdateViewMatrix();
+
 	UpdateMatricesData();
 	UpdateParticleData();
 	UpdateFrustumData();
@@ -38,7 +39,7 @@ void DX12App::UpdateMatricesData() {
 	Matrix invProj = camera.mProj_.Transpose();
 	invProj = invProj.Invert();
 	matricesData.invProj = invProj;
-	matricesBuffer->CopyData(0, matricesData);
+	currentFrameResource->matricesBuffer->CopyData(0, matricesData);
 }
 
 void DX12App::UpdateParticleData() {
@@ -46,7 +47,7 @@ void DX12App::UpdateParticleData() {
 	particleData.deltaTime = gt.DeltaTime();
 	particleData.CameraPos = camera.mCameraPos;
 	particleData.particlesCount = PARTICLE_COUNT;
-	particleConstantsBuffer->CopyData(0, particleData);
+	currentFrameResource->particleConstantsBuffer->CopyData(0, particleData);
 }
 
 void DX12App::UpdateFrustumData() {
@@ -72,7 +73,7 @@ void DX12App::UpdateObjectsBuffer() {
 	obj.View = camera.mView_.Transpose();
 	obj.Proj = camera.mProj_.Transpose();
 	obj.gTime = gt.TotalTime();
-	objectsUploadBuffer->CopyData(0, obj);
+	currentFrameResource->objectsUploadBuffer->CopyData(0, obj);
 }
 
 void DX12App::UpdateCameraConstants() {
@@ -83,7 +84,7 @@ void DX12App::UpdateCameraConstants() {
 	CameraConstants camConst;
 	camConst.invViewProj = InvViewProj;
 	camConst.cameraPos = camera.mCameraPos;
-	cameraBuffer->CopyData(0, camConst);
+	currentFrameResource->cameraBuffer->CopyData(0, camConst);
 }
 
 void DX12App::UpdateHullBuffer() {
@@ -93,7 +94,7 @@ void DX12App::UpdateHullBuffer() {
 	hullConst.gMaxTess = 5;
 	hullConst.gMinDist = 10.0f;
 	hullConst.gMaxDist = 200.0f;
-	hullBuffer->CopyData(0, hullConst);
+	currentFrameResource->hullBuffer->CopyData(0, hullConst);
 }
 
 void DX12App::UpdateTextureAnimation() {
@@ -111,7 +112,7 @@ void DX12App::UpdateTextureAnimation() {
 			sceneData.materials[i].MatTransform(1, 0) = tu;
 			sceneData.materials[i].MatTransform(1, 1) = tv;
 		}
-		materialBuffer->CopyData(i, sceneData.materials[i]);
+		currentFrameResource->materialBuffer->CopyData(i, sceneData.materials[i]);
 	}
 }
 
@@ -128,7 +129,7 @@ void DX12App::UpdateTreesLights() {
 				renderSystem->sceneLights_[i].lightColor.y = static_cast<float>(rand()) / RAND_MAX;
 				renderSystem->sceneLights_[i].lightColor.z = static_cast<float>(rand()) / RAND_MAX;
 			}
-			lightBuffer->CopyData(i, renderSystem->sceneLights_[i]);
+			currentFrameResource->lightBuffer->CopyData(i, renderSystem->sceneLights_[i]);
 		}
 	}
 }
@@ -140,6 +141,6 @@ void DX12App::UpdateShadowData() {
 		shadowData.lightViewProj = cascades.viewProjMats[i];
 		shadowData.shadowTransform = cascades.shadowTransform[i];
 		shadowData.cascadeDistances = Vector4(cascades.distances[0], cascades.distances[1], cascades.distances[2], 0.0f);
-		shadowBuffer->CopyData(i, shadowData);
+		currentFrameResource->shadowBuffer->CopyData(i, shadowData);
 	}
 }

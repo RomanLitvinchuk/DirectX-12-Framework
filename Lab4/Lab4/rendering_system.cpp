@@ -11,8 +11,6 @@
 
 void RenderingSystem::CreateOpaqueRS() {
 	CD3DX12_ROOT_PARAMETER slotRootParameter[8];
-	CD3DX12_DESCRIPTOR_RANGE cbvTable;
-	cbvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
 	CD3DX12_DESCRIPTOR_RANGE diffuseTable;
 	diffuseTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
 	CD3DX12_DESCRIPTOR_RANGE normalTable;
@@ -21,7 +19,7 @@ void RenderingSystem::CreateOpaqueRS() {
 	dispTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2);
 	CD3DX12_DESCRIPTOR_RANGE samplerTable;
 	samplerTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0);
-	slotRootParameter[0].InitAsDescriptorTable(1, &cbvTable, D3D12_SHADER_VISIBILITY_ALL);
+	slotRootParameter[0].InitAsConstantBufferView(0);
 	slotRootParameter[1].InitAsDescriptorTable(1, &diffuseTable, D3D12_SHADER_VISIBILITY_ALL);
 	slotRootParameter[2].InitAsDescriptorTable(1, &samplerTable, D3D12_SHADER_VISIBILITY_ALL);
 	slotRootParameter[3].InitAsConstantBufferView(1);

@@ -42,17 +42,6 @@ void DX12App::CreateSRV() {
 	}
 }
 
-void DX12App::CreateConstantBufferView() {
-	UINT cbByteSize = d3dUtil::CalcConstantBufferSize(sizeof(ObjectConstants));
-	D3D12_GPU_VIRTUAL_ADDRESS cbAddress = objectsUploadBuffer->Resource()->GetGPUVirtualAddress();
-	int BoxCBIndex = 0;
-	cbAddress += BoxCBIndex * cbByteSize;
-	D3D12_CONSTANT_BUFFER_VIEW_DESC cbDesc;
-	cbDesc.BufferLocation = cbAddress;
-	cbDesc.SizeInBytes = cbByteSize;
-	device->CreateConstantBufferView(&cbDesc, cbvSrvHeap->GetCPUDescriptorHandleForHeapStart());
-}
-
 void DX12App::InitUAVBuffers()
 {
 	UINT byteSize = PARTICLE_COUNT * sizeof(Particle);
@@ -102,13 +91,13 @@ void DX12App::InitUAVBuffers()
 	CD3DX12_CPU_DESCRIPTOR_HANDLE SortHandle(uavHandle, 1, size);
 	device->CreateUnorderedAccessView(ParticleSortList.Get(), sortParticlesCounterBuffer.Get(), &uavView, SortHandle);
 
-	ThrowIfFailed(commandList->Reset(commandAllocator.Get(), nullptr));
+	ThrowIfFailed(commandList->Reset(currentFrameResource->cmdListAlloc.Get(), nullptr));
 	CD3DX12_RESOURCE_BARRIER deadListToCopy = CD3DX12_RESOURCE_BARRIER::Transition(ParticleDeadList.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST);
 	CD3DX12_RESOURCE_BARRIER counterToCopy = CD3DX12_RESOURCE_BARRIER::Transition(deadParticlesCounterBuffer.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST);
 	D3D12_RESOURCE_BARRIER resourceBarrier[] = { deadListToCopy, counterToCopy };
 	commandList->ResourceBarrier(_countof(resourceBarrier), resourceBarrier);
 	commandList->CopyResource(ParticleDeadList.Get(), deadParticlesListUpload->Resource());
-	commandList->CopyResource(deadParticlesCounterBuffer.Get(), deadParticlesCounterUpload->Resource());
+	commandList->CopyResource(deadParticlesCounterBuffer.Get(), currentFrameResource->deadParticlesCounterUpload->Resource());
 	CD3DX12_RESOURCE_BARRIER toSRV = CD3DX12_RESOURCE_BARRIER::Transition(RWParticleBuffer.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 	CD3DX12_RESOURCE_BARRIER deadListToUAV = CD3DX12_RESOURCE_BARRIER::Transition(ParticleDeadList.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 	CD3DX12_RESOURCE_BARRIER deadCounterToUAV = CD3DX12_RESOURCE_BARRIER::Transition(deadParticlesCounterBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
@@ -136,5 +125,5 @@ void DX12App::CreateStructuredBuffersSRV() {
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE SrvHandle(handle, 3, size);
 
-	device->CreateShaderResourceView(lightBuffer->Resource(), &srvDesc, SrvHandle);
+	device->CreateShaderResourceView(currentFrameResource->lightBuffer->Resource(), &srvDesc, SrvHandle);
 }

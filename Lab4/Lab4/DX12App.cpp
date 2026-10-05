@@ -177,17 +177,17 @@ void DX12App::InitializeDevice() {
 	else { std::cout << "WARNING! MSAA 4x is NOT supported" << std::endl; }
 }
 
-void DX12App::InitializeCommandObjects() {
+void DX12App::CreateCommandQueue() {
 	D3D12_COMMAND_QUEUE_DESC queueDesc = {};
 	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 	queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
 	ThrowIfFailed(device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&commandQueue)));
-	std::cout << "Command queue is created" << std::endl;
-	ThrowIfFailed(device->CreateCommandAllocator(queueDesc.Type, IID_PPV_ARGS(&commandAllocator)));
-	std::cout << "Command allocator is created" << std::endl;
-	ThrowIfFailed(device->CreateCommandList(0, queueDesc.Type, commandAllocator.Get(), nullptr, IID_PPV_ARGS(&commandList)));
-	std::cout << "Command list is created" << std::endl;
 	ThrowIfFailed(commandList->Close());
+}
+
+void DX12App::CreateCommandList()
+{
+	ThrowIfFailed(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, currentFrameResource->cmdListAlloc.Get(), nullptr, IID_PPV_ARGS(&commandList)));
 }
 
 void DX12App::CreateSwapChain(HWND hWnd) {
@@ -369,8 +369,8 @@ void DX12App::InitProjectionMatrix() {
 
 void DX12App::CreateVertexBuffer() {
 	UINT vbByteSize = (UINT)(sceneData.vertices.size() * sizeof(Vertex));
-	ThrowIfFailed(commandAllocator->Reset());
-	ThrowIfFailed(commandList->Reset(commandAllocator.Get(), nullptr));
+	ThrowIfFailed(currentFrameResource->cmdListAlloc->Reset());
+	ThrowIfFailed(commandList->Reset(currentFrameResource->cmdListAlloc.Get(), nullptr));
 	vertexBufferGPU = d3dUtil::CreateDefaultBuffer(device.Get(), commandList.Get(), sceneData.vertices.data(), vbByteSize, vertexBufferUploader);
 	ThrowIfFailed(commandList->Close());
 	ID3D12CommandList* cmdsLists[] = { commandList.Get() };
@@ -386,8 +386,8 @@ void DX12App::CreateVertexBuffer() {
 
 void DX12App::CreateIndexBuffer() {
 	UINT ibByteSize = (UINT)(sceneData.indices.size() * sizeof(std::uint32_t));
-	ThrowIfFailed(commandAllocator->Reset());
-	ThrowIfFailed(commandList->Reset(commandAllocator.Get(), nullptr));
+	ThrowIfFailed(currentFrameResource->cmdListAlloc->Reset());
+	ThrowIfFailed(commandList->Reset(currentFrameResource->cmdListAlloc.Get(), nullptr));
 	indexBufferGPU = d3dUtil::CreateDefaultBuffer(device.Get(), commandList.Get(), sceneData.indices.data(), ibByteSize, indexBufferUploader);
 	ThrowIfFailed(commandList->Close());
 	ID3D12CommandList* cmdsLists[] = { commandList.Get() };
@@ -400,7 +400,7 @@ void DX12App::CreateIndexBuffer() {
 
 void DX12App::OnResize() {
 	FlushCommandQueue();
-	ThrowIfFailed(commandList->Reset(commandAllocator.Get(), nullptr));
+	ThrowIfFailed(commandList->Reset(currentFrameResource->cmdListAlloc.Get(), nullptr));
 	swapChainBuffer[0].Reset();
 	swapChainBuffer[1].Reset();
 
@@ -438,7 +438,7 @@ void DX12App::BuildOctree() {
 
 void DX12App::LoadTextures()
 {
-	ThrowIfFailed(commandList->Reset(commandAllocator.Get(), nullptr));
+	ThrowIfFailed(commandList->Reset(currentFrameResource->cmdListAlloc.Get(), nullptr));
 	UINT index = RESERVED_TEXTURES + 1;
 
 	for (auto& entry : std::filesystem::directory_iterator(L"textures"))
@@ -510,4 +510,45 @@ void DX12App::InitShadowMap() {
 	shadowMap->BuildDescriptors(smHandle, smGpuHandle, smDsvHandle);
 }
 
+void DX12App::InitFrameResources()
+{
+	frameResources.clear();
+
+	for (int i = 0; i < numFrameResources; ++i)
+	{
+		frameResources.push_back(std::make_unique<FrameResource>(300, 1000, 1000));
+	}
+	currentFrameResource = frameResources[0].get();
+	currentFrameResourceIndex = 0;
+
+	FillFrameResources();
+}
+
  
+void DX12App::FillFrameResources()
+{
+	for (auto& frameResource : frameResources)
+	{
+		for (UINT i = 0; i < sceneData.materials.size(); ++i)
+		{
+			frameResource->materialBuffer->CopyData(i, sceneData.materials[i]);
+		}
+
+		frameResource->deadParticlesCounterUpload->CopyData(0, PARTICLE_COUNT);
+		frameResource->sortParticlesCounterUpload->CopyData(0, 0);
+	}
+}
+
+void DX12App::WaitForCurrentFrameResource()
+{
+	currentFrameResourceIndex = (currentFrameResourceIndex + 1) % numFrameResources;
+	currentFrameResource = frameResources[currentFrameResourceIndex].get();
+
+	if (currentFrameResource->Fence != 0 && fence->GetCompletedValue() < currentFrameResource->Fence)
+	{
+		HANDLE eventHandle = CreateEventEx(nullptr, nullptr, false, EVENT_ALL_ACCESS);
+		ThrowIfFailed(fence->SetEventOnCompletion(currentFrameResource->Fence, eventHandle));
+		WaitForSingleObject(eventHandle, INFINITE);
+		CloseHandle(eventHandle);
+	}
+}

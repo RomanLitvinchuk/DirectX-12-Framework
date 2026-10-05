@@ -145,6 +145,7 @@
     <ClCompile Include="DDSTextureLoader.cpp" />
     <ClCompile Include="deffered_rendering.cpp" />
     <ClCompile Include="DX12App.cpp" />
+    <ClCompile Include="frame_resource.cpp" />
     <ClCompile Include="game_timer.cpp" />
     <ClCompile Include="g_buffer.cpp" />
     <ClCompile Include="imgui\backends\imgui_impl_dx12.cpp" />
@@ -177,6 +178,7 @@
     <ClInclude Include="d3dUtil.h" />
     <ClInclude Include="DDSTextureLoader.h" />
     <ClInclude Include="DX12App.h" />
+    <ClInclude Include="frame_resource.h" />
     <ClInclude Include="game_timer.h" />
     <ClInclude Include="g_buffer.h" />
     <ClInclude Include="imgui\backends\imgui_impl_dx12.h" />

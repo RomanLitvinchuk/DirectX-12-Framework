@@ -22,8 +22,8 @@ void DX12App::BuildBoxGeometry() {
         0, 4, 1, 5, 2, 6, 3, 7
     };
 
-    ThrowIfFailed(commandAllocator->Reset());
-    ThrowIfFailed(commandList->Reset(commandAllocator.Get(), nullptr));
+    ThrowIfFailed(currentFrameResource->cmdListAlloc->Reset());
+    ThrowIfFailed(commandList->Reset(currentFrameResource->cmdListAlloc.Get(), nullptr));
 
     const UINT vbByteSize = sizeof(vertices);
     const UINT ibByteSize = sizeof(indices);

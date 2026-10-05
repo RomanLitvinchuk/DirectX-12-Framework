@@ -20,6 +20,7 @@
 #include "ssao.h"
 #include "scene_data.h"
 #include "input_handler.h"
+#include "frame_resource.h"
 
 
 using namespace Microsoft::WRL;
@@ -29,7 +30,8 @@ class DX12App
 {
 public:
 	void InitializeDevice();
-	void InitializeCommandObjects();
+	void CreateCommandQueue();
+	void CreateCommandList();
 	void CreateSwapChain(HWND hWnd);
 	void CreateRTVAndDSVDescriptorHeaps();
 	void CreateCBVDescriptorHeap();
@@ -80,6 +82,11 @@ public:
 
 	void InitUploadBuffers();
 	void FillUploadBuffers();
+
+	void InitFrameResources();
+	void FillFrameResources();
+	void WaitForCurrentFrameResource();
+
 	void InitUAVBuffers();
 	void CreateConstantBufferView();
 	void CreateStructuredBuffersSRV();
@@ -158,7 +165,6 @@ private:
 	D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msQualityLevels_;
 	
 	ComPtr<ID3D12CommandQueue> commandQueue = nullptr;
-	ComPtr<ID3D12CommandAllocator> commandAllocator = nullptr;
 	ComPtr<ID3D12GraphicsCommandList> commandList = nullptr;
 	
 	ComPtr<IDXGISwapChain> swapChain = nullptr;
@@ -186,22 +192,12 @@ private:
 	ComPtr<ID3D12Resource> indexBufferUploader = nullptr;
 	D3D12_INDEX_BUFFER_VIEW indexBufferView;
 
-	std::unique_ptr<UploadBuffer<ObjectConstants>> objectsUploadBuffer = nullptr;
-	std::unique_ptr<UploadBuffer<Matrices>> matricesBuffer = nullptr;
-	std::unique_ptr<UploadBuffer<ParticleConstants>> particleConstantsBuffer = nullptr;
-	std::unique_ptr<UploadBuffer<MaterialConstants>> materialBuffer = nullptr;
-	std::unique_ptr<UploadBuffer<LightConstants>> lightBuffer = nullptr;
-	std::unique_ptr<UploadBuffer<CameraConstants>> cameraBuffer = nullptr;
-	std::unique_ptr<UploadBuffer<HullBuffer>> hullBuffer = nullptr;
-	std::unique_ptr<UploadBuffer<MeshInstanceData>> instanceBuffer = nullptr;
-	std::unique_ptr<UploadBuffer<WireframeInstanceData>> wireframeInstanceBuffer = nullptr;
-	std::unique_ptr<UploadBuffer<ShadowConstants>> shadowBuffer = nullptr;
-	std::unique_ptr<UploadBuffer<SsaoConstants>> ssaoBuffer = nullptr;
-	std::unique_ptr<UploadBuffer<BlurConstants>> ssaoBlurBuffer = nullptr;
+	static constexpr int numFrameResources = 3;
+	std::vector<std::unique_ptr<FrameResource>> frameResources;
+	FrameResource* currentFrameResource = nullptr;
+	int currentFrameResourceIndex = 0;
 
 	std::unique_ptr<UploadBuffer<uint32_t>> deadParticlesListUpload = nullptr;
-	std::unique_ptr<UploadBuffer<uint32_t>> deadParticlesCounterUpload = nullptr;
-	std::unique_ptr<UploadBuffer<uint32_t>> sortParticlesCounterUpload = nullptr;
 	ComPtr<ID3D12Resource> RWParticleBuffer = nullptr;
 	ComPtr<ID3D12Resource> ParticleDeadList = nullptr;
 	ComPtr<ID3D12Resource> ParticleSortList = nullptr;

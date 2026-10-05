@@ -208,9 +208,9 @@ void DX12App::DrawSSAO() {
 
 	commandList->SetGraphicsRootDescriptorTable(1, renderSystem->ssao->GetSamplerHeap()->GetGPUDescriptorHandleForHeapStart());
 
-	commandList->SetGraphicsRootConstantBufferView(2, ssaoBuffer->Resource()->GetGPUVirtualAddress());
-	commandList->SetGraphicsRootConstantBufferView(3, cameraBuffer->Resource()->GetGPUVirtualAddress());
-	commandList->SetGraphicsRootConstantBufferView(4, matricesBuffer->Resource()->GetGPUVirtualAddress());
+	commandList->SetGraphicsRootConstantBufferView(2, currentFrameResource->ssaoBuffer->Resource()->GetGPUVirtualAddress());
+	commandList->SetGraphicsRootConstantBufferView(3, currentFrameResource->cameraBuffer->Resource()->GetGPUVirtualAddress());
+	commandList->SetGraphicsRootConstantBufferView(4, currentFrameResource->matricesBuffer->Resource()->GetGPUVirtualAddress());
 
 	commandList->DrawInstanced(3, 1, 0, 0);
 }
@@ -242,9 +242,9 @@ void DX12App::BlurSSAO()
 	blurConst.screenHeight = clientHeight / 2;
 	blurConst.blurType = 0.0f;
 	blurConst.padding = 0.0f;
-	ssaoBlurBuffer->CopyData(0, blurConst);
+	currentFrameResource->ssaoBlurBuffer->CopyData(0, blurConst);
 
-	commandList->SetGraphicsRootConstantBufferView(3, ssaoBlurBuffer->Resource()->GetGPUVirtualAddress());
+	commandList->SetGraphicsRootConstantBufferView(3, currentFrameResource->ssaoBlurBuffer->Resource()->GetGPUVirtualAddress());
 
 	commandList->DrawInstanced(3, 1, 0, 0);
 
@@ -254,8 +254,8 @@ void DX12App::BlurSSAO()
 	commandList->SetGraphicsRootDescriptorTable(0, ssaoReadTexture->srvGpuHandle);
 
 	blurConst.blurType = 1.0f;
-	ssaoBlurBuffer->CopyData(0, blurConst);
-	commandList->SetGraphicsRootConstantBufferView(3, ssaoBlurBuffer->Resource()->GetGPUVirtualAddress());
+	currentFrameResource->ssaoBlurBuffer->CopyData(0, blurConst);
+	commandList->SetGraphicsRootConstantBufferView(3, currentFrameResource->ssaoBlurBuffer->Resource()->GetGPUVirtualAddress());
 
 	commandList->DrawInstanced(3, 1, 0, 0);
 

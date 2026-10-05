@@ -197,7 +197,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 	g_hWnd = wnd.getHWND();
 
 	MyFramework.InitializeDevice();
-	MyFramework.InitializeCommandObjects();
+    MyFramework.InitFrameResources();
+    MyFramework.CreateCommandList();
+    MyFramework.CreateCommandQueue();
 	MyFramework.CreateSwapChain(g_hWnd);
 
 	MyFramework.CreateRTVAndDSVDescriptorHeaps();
@@ -232,7 +234,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     MyFramework.InitUAVBuffers();
 
     MyFramework.InitEmitter();
-	MyFramework.CreateConstantBufferView();
     MyFramework.InitRenderSystem();
     MyFramework.InitShadowMap();
 

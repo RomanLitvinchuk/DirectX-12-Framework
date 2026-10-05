@@ -22,7 +22,7 @@ void DX12App::EmitParticles() {
 void DX12App::ComputeParticles() {
 	commandList->SetPipelineState(renderSystem->particlesUpdatePSO_.Get());
 	commandList->SetComputeRootSignature(renderSystem->particlesUpdateRS_.Get());
-	commandList->SetComputeRootConstantBufferView(0, particleConstantsBuffer->Resource()->GetGPUVirtualAddress());
+	commandList->SetComputeRootConstantBufferView(0, currentFrameResource->particleConstantsBuffer->Resource()->GetGPUVirtualAddress());
 	commandList->SetComputeRootUnorderedAccessView(1, RWParticleBuffer->GetGPUVirtualAddress());
 	CD3DX12_GPU_DESCRIPTOR_HANDLE uavHandle(
 		uavHeap->GetGPUDescriptorHandleForHeapStart(),
@@ -33,7 +33,7 @@ void DX12App::ComputeParticles() {
 	CD3DX12_RESOURCE_BARRIER sortCounterBarrier = CD3DX12_RESOURCE_BARRIER::Transition(sortParticlesCounterBuffer.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_DEST);
 	D3D12_RESOURCE_BARRIER barriers[] = { sortCounterBarrier };
 	commandList->ResourceBarrier(_countof(barriers), barriers);
-	commandList->CopyResource(sortParticlesCounterBuffer.Get(), sortParticlesCounterUpload->Resource());
+	commandList->CopyResource(sortParticlesCounterBuffer.Get(), currentFrameResource->sortParticlesCounterUpload->Resource());
 	CD3DX12_RESOURCE_BARRIER sortToUAV = CD3DX12_RESOURCE_BARRIER::Transition(sortParticlesCounterBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
 	commandList->Dispatch(ceil(PARTICLE_COUNT / 256.0f), 1, 1);
@@ -52,7 +52,7 @@ void DX12App::DrawParticles() {
 
 	commandList->SetGraphicsRootSignature(renderSystem->particleRS_.Get());
 	
-	commandList->SetGraphicsRootConstantBufferView(0, matricesBuffer->Resource()->GetGPUVirtualAddress());
+	commandList->SetGraphicsRootConstantBufferView(0, currentFrameResource->matricesBuffer->Resource()->GetGPUVirtualAddress());
 	commandList->SetGraphicsRootShaderResourceView(1, RWParticleBuffer->GetGPUVirtualAddress());
 
 	commandList->IASetVertexBuffers(0, 0, nullptr);
