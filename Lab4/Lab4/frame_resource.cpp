@@ -20,4 +20,5 @@ FrameResource::FrameResource(UINT materialCount, UINT lightCount, UINT instanceC
 	ssaoBlurBuffer = std::make_unique<UploadBuffer<BlurConstants>>(device.Get(), 1, true);
 	deadParticlesCounterUpload = std::make_unique<UploadBuffer<uint32_t>>(device.Get(), 1, false);
 	sortParticlesCounterUpload = std::make_unique<UploadBuffer<uint32_t>>(device.Get(), 1, false);
+	viewportBuffer = std::make_unique<UploadBuffer<ViewportConstants>>(device.Get(), 1, true);
 }

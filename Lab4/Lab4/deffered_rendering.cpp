@@ -144,6 +144,7 @@ void DX12App::DrawToGBuffer() {
 		commandList->SetGraphicsRootConstantBufferView(0, currentFrameResource->objectsUploadBuffer->Resource()->GetGPUVirtualAddress()); 
 		commandList->SetGraphicsRootDescriptorTable(2, samplerHandle); 
 		commandList->SetGraphicsRootConstantBufferView(6, currentFrameResource->hullBuffer->Resource()->GetGPUVirtualAddress());
+		commandList->SetGraphicsRootConstantBufferView(8, currentFrameResource->viewportBuffer->Resource()->GetGPUVirtualAddress());
 
 		UINT matIndex = sm.materialIndex;
 		UINT matSize = d3dUtil::CalcConstantBufferSize(sizeof(MaterialConstants));
@@ -332,6 +333,7 @@ void DX12App::DrawNYBalls()
 
 void DX12App::Draw()
 {
+	frameIndex++;
 	WaitForCurrentFrameResource();
 	ThrowIfFailed(currentFrameResource->cmdListAlloc->Reset());
 	ThrowIfFailed(commandList->Reset(currentFrameResource->cmdListAlloc.Get(), renderSystem->opaquePSO_.Get()));
@@ -380,31 +382,39 @@ void DX12App::Draw()
 		DrawParticles();
 	}
 
-	//Здесь будут шейдеры до тонмаппинга
+	if (!bHistoryValid)
+	{
+		
+	}
+	else
+	{
+		//Здесь будут шейдеры до тонмаппинга
 
-	d3dUtil::SwapTextures(commandList, ppWriteTexture, ppReadTexture);
-	DrawPPTonemap(ppReadTexture);
-	ppReadTexture = &renderSystem->post_process->GetLdrTextureB();
-	ppWriteTexture = &renderSystem->post_process->GetLdrTextureA();
-	d3dUtil::SwapTextures(commandList, ppWriteTexture, ppReadTexture);
+		d3dUtil::SwapTextures(commandList, ppWriteTexture, ppReadTexture);
+		DrawPPTonemap(ppReadTexture);
+		ppReadTexture = &renderSystem->post_process->GetLdrTextureB();
+		ppWriteTexture = &renderSystem->post_process->GetLdrTextureA();
+		d3dUtil::SwapTextures(commandList, ppWriteTexture, ppReadTexture);
 
-	DrawPPVignette(ppReadTexture, ppWriteTexture);
-	d3dUtil::SwapTextures(commandList, ppWriteTexture, ppReadTexture);
-	DrawPPOutput(ppReadTexture);
+		DrawPPVignette(ppReadTexture, ppWriteTexture);
+		d3dUtil::SwapTextures(commandList, ppWriteTexture, ppReadTexture);
+		DrawPPOutput(ppReadTexture);
 
-	RenderImGui();
+		RenderImGui();
 
-	CD3DX12_RESOURCE_BARRIER barrierBack = CD3DX12_RESOURCE_BARRIER::Transition(
-		CurrentBackBuffer(),
-		D3D12_RESOURCE_STATE_RENDER_TARGET,
-		D3D12_RESOURCE_STATE_PRESENT);
-	commandList->ResourceBarrier(1, &barrierBack);
-	ThrowIfFailed(commandList->Close());
-	ID3D12CommandList* cmdsLists[] = { commandList.Get() };
-	commandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+		CD3DX12_RESOURCE_BARRIER barrierBack = CD3DX12_RESOURCE_BARRIER::Transition(
+			CurrentBackBuffer(),
+			D3D12_RESOURCE_STATE_RENDER_TARGET,
+			D3D12_RESOURCE_STATE_PRESENT);
+		commandList->ResourceBarrier(1, &barrierBack);
+		ThrowIfFailed(commandList->Close());
+		ID3D12CommandList* cmdsLists[] = { commandList.Get() };
+		commandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
-	ThrowIfFailed(swapChain->Present(0, 0));
-	currentBackBuffer = (currentBackBuffer + 1) % 2;
+		ThrowIfFailed(swapChain->Present(0, 0));
+		currentBackBuffer = (currentBackBuffer + 1) % 2;
+	}
+	
 
 	currentFence++;
 	currentFrameResource->Fence = currentFence;

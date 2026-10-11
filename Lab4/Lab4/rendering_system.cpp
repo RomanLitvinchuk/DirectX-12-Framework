@@ -10,7 +10,7 @@
 #include "singletone_device.h"
 
 void RenderingSystem::CreateOpaqueRS() {
-	CD3DX12_ROOT_PARAMETER slotRootParameter[8];
+	CD3DX12_ROOT_PARAMETER slotRootParameter[9];
 	CD3DX12_DESCRIPTOR_RANGE diffuseTable;
 	diffuseTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
 	CD3DX12_DESCRIPTOR_RANGE normalTable;
@@ -27,6 +27,7 @@ void RenderingSystem::CreateOpaqueRS() {
 	slotRootParameter[5].InitAsDescriptorTable(1, &dispTable, D3D12_SHADER_VISIBILITY_ALL);
 	slotRootParameter[6].InitAsConstantBufferView(2);
 	slotRootParameter[7].InitAsShaderResourceView(3);
+	slotRootParameter[8].InitAsConstantBufferView(3);
 
 	CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(
 		_countof(slotRootParameter), slotRootParameter,

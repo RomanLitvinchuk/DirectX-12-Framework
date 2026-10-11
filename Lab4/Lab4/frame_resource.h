@@ -11,6 +11,7 @@
 #include "instances.h"
 #include "shadow_map.h"
 #include "ssao.h"
+#include "viewport_constants.h"
 
 class FrameResource {
 public:
@@ -35,6 +36,7 @@ public:
 	std::unique_ptr<UploadBuffer<BlurConstants>> ssaoBlurBuffer;
 	std::unique_ptr<UploadBuffer<uint32_t>> deadParticlesCounterUpload;
 	std::unique_ptr<UploadBuffer<uint32_t>> sortParticlesCounterUpload;
+	std::unique_ptr<UploadBuffer<ViewportConstants>> viewportBuffer;
 
 	UINT64 Fence = 0;
 };

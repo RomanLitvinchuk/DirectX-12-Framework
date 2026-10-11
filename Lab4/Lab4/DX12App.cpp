@@ -112,11 +112,6 @@ void DX12App::NewImGuiFrame(){
 }
 
 void DX12App::BuildImGui() {
-	//static bool showDemoWindow = true;
-	//if (showDemoWindow) 
-	//{
-	//	ImGui::ShowDemoWindow(&showDemoWindow);
-	//}
 	ImGui::Begin("Framework");
 	ImGui::Text("DirectX 12");
 	ImGui::Separator();
@@ -536,6 +531,7 @@ void DX12App::FillFrameResources()
 
 		frameResource->deadParticlesCounterUpload->CopyData(0, PARTICLE_COUNT);
 		frameResource->sortParticlesCounterUpload->CopyData(0, 0);
+		
 	}
 }
 

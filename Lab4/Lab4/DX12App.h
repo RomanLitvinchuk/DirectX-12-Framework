@@ -146,6 +146,8 @@ private:
 	void UpdateHullBuffer();
 	void UpdateObjectsBuffer();
 	void UpdateCameraConstants();
+	void UpdateViewportConstants();
+	float Halton(uint32_t index, uint32_t base);
 
 
 
@@ -246,6 +248,8 @@ private:
 	ComPtr<ID3D12Resource> readbackBuffer = nullptr;
 	D3D12_STREAM_OUTPUT_BUFFER_VIEW streamOutputBufferView = {};
 	bool bIsFirstFrame = true;
+	bool bHistoryValid = true;
+	uint32_t frameIndex = 0;
 
 	std::unique_ptr<ShadowMap> shadowMap;
 	float SHADOW_MAP_SIZE = 8192.0f;

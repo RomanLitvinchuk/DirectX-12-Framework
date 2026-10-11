@@ -37,6 +37,13 @@ cbuffer cbMaterial : register(b1)
     int2 pad2;
 }
 
+cbuffer cbViewport : register(b3)
+{
+    float screenHeight;
+    float screenWidth;
+    float2 jitter;
+}
+
 Texture2D DiffuseMap : register(t0);
 Texture2D NormalMap : register(t1);
 Texture2D DisplacementMap : register(t2);
@@ -113,6 +120,7 @@ VS_OUTPUT VS(VS_INPUT input, uint instanceID : SV_InstanceID)
     output.Wpos = mul(float4(localPos, 1.0f), mWorld);
     output.pos = mul(output.Wpos, mView);
     output.pos = mul(output.pos, mProj);
+    output.pos.xy += jitter * output.pos.w;
     
     output.normal = localNormal;
     output.normalW = normalW;

@@ -211,6 +211,7 @@
     <ClInclude Include="throw_if_failed.h" />
     <ClInclude Include="upload_buffer.h" />
     <ClInclude Include="vertex.h" />
+    <ClInclude Include="viewport_constants.h" />
     <ClInclude Include="window_class.h" />
   </ItemGroup>
   <ItemGroup>

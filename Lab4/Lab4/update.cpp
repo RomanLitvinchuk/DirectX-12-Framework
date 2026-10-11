@@ -27,6 +27,8 @@ void DX12App::Update() {
 
 	UpdateCascades();
 	UpdateShadowData();
+	
+	UpdateViewportConstants();
 }
 
 void DX12App::UpdateMatricesData() {
@@ -143,4 +145,30 @@ void DX12App::UpdateShadowData() {
 		shadowData.cascadeDistances = Vector4(cascades.distances[0], cascades.distances[1], cascades.distances[2], 0.0f);
 		currentFrameResource->shadowBuffer->CopyData(i, shadowData);
 	}
+}
+
+void DX12App::UpdateViewportConstants()
+{
+	ViewportConstants viewportData;
+	viewportData.screenHeight = clientHeight;
+	viewportData.screenWidth = clientWidth;
+	uint32_t index = (frameIndex % 16) + 1;
+	float jitterX = (Halton(index, 2) - 0.5f) * 2.0f / clientWidth;
+	float jitterY = (Halton(index, 3) - 0.5f) * 2.0f / clientHeight;
+	Vector2 jitter = Vector2(jitterX, jitterY);
+	viewportData.jitter = jitter;
+	currentFrameResource->viewportBuffer->CopyData(0, viewportData);
+}
+
+float DX12App::Halton(uint32_t index, uint32_t base)
+{
+	float result = 0.0f;
+	float fraction = 1.0f / base;
+	while (index > 0)
+	{
+		result += fraction * (index % base);
+		index /= base;
+		fraction /= base;
+	}
+	return result;
 }
