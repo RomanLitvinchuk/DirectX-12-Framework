@@ -1,44 +1,112 @@
 #include "DX12App.h"
-#include <numeric>
+#include "history.h"
+#include "imgui.h"
 
 #define ALIGN_256(size) ((size + 255) & ~255)
 
-void DX12App::InitRenderSystem() {
-	ID3D12Resource* noiseTexResource = nullptr;
-	auto iter = sceneData.textures.find(L"noise");
-	if (iter != sceneData.textures.end()) {
-		noiseTexResource = iter->second->Resource.Get();
+void DX12App::Draw()
+{
+	frameIndex++;
+	WaitForCurrentFrameResource();
+	ThrowIfFailed(currentFrameResource->cmdListAlloc->Reset());
+	ThrowIfFailed(commandList->Reset(currentFrameResource->cmdListAlloc.Get(), renderSystem->opaquePSO_.Get()));
+	SortLODs();
+	DrawShadows();
+	commandList->RSSetViewports(1, &viewport);
+	commandList->RSSetScissorRects(1, &scissorRect);
+
+	renderSystem->g_buffer->TransitToOpaqueRenderingState(commandList);
+
+	renderSystem->g_buffer->ClearGBuffer(commandList);
+	renderSystem->post_process->ClearPostProcess(commandList);
+	renderSystem->ssao->ClearSSAO(commandList);
+
+
+	MyTexture* ppWriteTexture = &renderSystem->post_process->GetHdrTextureA();
+	MyTexture* ppReadTexture = &renderSystem->post_process->GetHdrTextureB();
+
+	bIsTreeVisible = false;
+
+	if (bIsFirstFrame) {
+		DrawToStreamOutput();
+		ThrowIfFailed(commandList->Reset(currentFrameResource->cmdListAlloc.Get(), renderSystem->opaquePSO_.Get()));
+		bIsFirstFrame = false;
 	}
-	renderSystem = new RenderingSystem(clientWidth, clientHeight, noiseTexResource);
+	DrawToGBuffer();
+	renderSystem->g_buffer->TransitToLightsRenderingState(commandList);
+	DrawLights();
 
-	CreateStructuredBuffersSRV();
-}
+	if (bIsTreeVisible) DrawNYBalls();
 
-void DX12App::sortLODs(){
-	for (auto& sm : sceneData.submeshes) {
-		sm.sorted_lod0.clear();
-		sm.sorted_lod1.clear();
-		sm.sorted_billboards.clear();
-		sm.sorted_lod0.reserve(sm.InstanceCount);
-		if (sm.hasLOD1) sm.sorted_lod1.reserve(sm.InstanceCount);
-
-		for (int i = 0; i < sm.InstanceCount; i++) {
-			Vector3 instancePos(sm.instances[i].World_._41, sm.instances[i].World_._42, sm.instances[i].World_._43);
-			float distSq = Vector3::DistanceSquared(camera.mCameraPos, instancePos);
-
-			if (sm.hasLOD1 && distSq > BILLBOARD_DISTANCE) {
-				sm.sorted_billboards.push_back(sm.instances[i]);
-			}
-			else if (sm.hasLOD1 && distSq > LOD_DISTANCE)
-			{
-				sm.sorted_lod1.push_back(sm.instances[i]);
-			}
-			else {
-				sm.sorted_lod0.push_back(sm.instances[i]);
-			}
+	bool isEmitterInside = true;
+	if (camera.bIsFrustumCullingEnabled) {
+		ContainmentType type = camera.frustum.Contains(emitter.bounds);
+		if (type == ContainmentType::DISJOINT) {
+			isEmitterInside = false;
 		}
 	}
+	EmitParticles();
+	ComputeParticles();
+	if (isEmitterInside) {
+		DrawParticles();
+	}
+
+	bool skipPresent = !bHistoryValid;
+
+	if (skipPresent)
+	{
+		InitHistoryTextureFromCurrentFrame();
+		bHistoryValid = true;
+		ImGui::EndFrame();
+	}
+	else
+	{
+		DrawWireframe();
+
+		CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
+			D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
+		commandList->ResourceBarrier(1, &barrier);
+
+		//Здесь будут шейдеры до тонмаппинга
+
+		d3dUtil::SwapTextures(commandList, ppWriteTexture, ppReadTexture);
+		DrawPPTonemap(ppReadTexture);
+		ppReadTexture = &renderSystem->post_process->GetLdrTextureB();
+		ppWriteTexture = &renderSystem->post_process->GetLdrTextureA();
+		d3dUtil::SwapTextures(commandList, ppWriteTexture, ppReadTexture);
+
+		if (renderSystem->bVignette)
+		{
+			DrawPPVignette(ppReadTexture, ppWriteTexture);
+			d3dUtil::SwapTextures(commandList, ppWriteTexture, ppReadTexture);
+		}
+		DrawPPOutput(ppReadTexture);
+
+		RenderImGui();
+
+		CD3DX12_RESOURCE_BARRIER barrierBack = CD3DX12_RESOURCE_BARRIER::Transition(
+			CurrentBackBuffer(),
+			D3D12_RESOURCE_STATE_RENDER_TARGET,
+			D3D12_RESOURCE_STATE_PRESENT);
+		commandList->ResourceBarrier(1, &barrierBack);
+	}
+
+	ThrowIfFailed(commandList->Close());
+	ID3D12CommandList* cmdsLists[] = { commandList.Get() };
+	commandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+
+	if (!skipPresent)
+	{
+		ThrowIfFailed(swapChain->Present(0, 0));
+		currentBackBuffer = (currentBackBuffer + 1) % 2;
+	}
+
+	currentFence++;
+	currentFrameResource->Fence = currentFence;
+	ThrowIfFailed(commandQueue->Signal(fence.Get(), currentFence));
 }
+
+
 
 void DX12App::DrawShadows() {
 
@@ -112,7 +180,6 @@ void DX12App::DrawShadows() {
 }
 
 void DX12App::DrawToGBuffer() {
-	GetVisibleObjects();
 	commandList->ClearDepthStencilView(GetDSV(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvs[] = {
@@ -181,19 +248,6 @@ void DX12App::DrawToGBuffer() {
 		DrawLOD0ToGBuffer(currentInstanceOffset, sm);
 		DrawLOD1ToGBuffer(currentInstanceOffset, sm);
 		DrawBillboardsToGBuffer(currentInstanceOffset, sm);
-	}
-}
-
-void DX12App::GetVisibleObjects() {
-	visibleIndices.clear();
-	if (camera.bIsFrustumCullingEnabled)
-	{
-		octree.GetVisibleObjects(camera.frustum, sceneData.submeshes, visibleIndices);
-	}
-	else
-	{
-		visibleIndices.resize(sceneData.submeshes.size());
-		std::iota(visibleIndices.begin(), visibleIndices.end(), 0);
 	}
 }
 
@@ -329,94 +383,16 @@ void DX12App::DrawNYBalls()
 	commandList->DrawIndexedInstanced(sphereIndexCount, 500, 0, 0, 0);
 }
 
-
-
-void DX12App::Draw()
+void DX12App::InitHistoryTextureFromCurrentFrame()
 {
-	frameIndex++;
-	WaitForCurrentFrameResource();
-	ThrowIfFailed(currentFrameResource->cmdListAlloc->Reset());
-	ThrowIfFailed(commandList->Reset(currentFrameResource->cmdListAlloc.Get(), renderSystem->opaquePSO_.Get()));
-	sortLODs();
-	DrawShadows();
-	commandList->RSSetViewports(1, &viewport);
-	commandList->RSSetScissorRects(1, &scissorRect);
+	auto& hdrTexture = renderSystem->post_process->GetHdrTextureA();
+	auto& historyA = renderSystem->history->GetHistoryA();
 
-	renderSystem->g_buffer->TransitToOpaqueRenderingState(commandList);
+	d3dUtil::Barrier(commandList, &hdrTexture, D3D12_RESOURCE_STATE_COPY_SOURCE);
+	d3dUtil::Barrier(commandList, &historyA, D3D12_RESOURCE_STATE_COPY_DEST);
 
-	renderSystem->g_buffer->ClearGBuffer(commandList);
-	renderSystem->post_process->ClearPostProcess(commandList);
-	renderSystem->ssao->ClearSSAO(commandList);
+	commandList->CopyResource(historyA.Resource.Get(), hdrTexture.Resource.Get());
 
-
-	MyTexture* ppWriteTexture = &renderSystem->post_process->GetHdrTextureA();
-	MyTexture* ppReadTexture = &renderSystem->post_process->GetHdrTextureB();
-
-	bIsTreeVisible = false;
-
-	if (bIsFirstFrame) {
-		DrawToStreamOutput();
-		ThrowIfFailed(commandList->Reset(currentFrameResource->cmdListAlloc.Get(), renderSystem->opaquePSO_.Get()));
-		bIsFirstFrame = false;
-	}
-	DrawToGBuffer();
-	renderSystem->g_buffer->TransitToLightsRenderingState(commandList);
-	CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
-		D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
-	commandList->ResourceBarrier(1, &barrier);
-	DrawLights();
-
-	if (bIsTreeVisible) DrawNYBalls();
-
-	bool isEmitterInside = true;
-	if (camera.bIsFrustumCullingEnabled) {
-		ContainmentType type = camera.frustum.Contains(emitter.bounds);
-		if (type == ContainmentType::DISJOINT) {
-			isEmitterInside = false;
-		}
-	}
-	DrawWireframe();
-	EmitParticles();
-	ComputeParticles();
-	if (isEmitterInside) {
-		DrawParticles();
-	}
-
-	if (!bHistoryValid)
-	{
-		
-	}
-	else
-	{
-		//Здесь будут шейдеры до тонмаппинга
-
-		d3dUtil::SwapTextures(commandList, ppWriteTexture, ppReadTexture);
-		DrawPPTonemap(ppReadTexture);
-		ppReadTexture = &renderSystem->post_process->GetLdrTextureB();
-		ppWriteTexture = &renderSystem->post_process->GetLdrTextureA();
-		d3dUtil::SwapTextures(commandList, ppWriteTexture, ppReadTexture);
-
-		DrawPPVignette(ppReadTexture, ppWriteTexture);
-		d3dUtil::SwapTextures(commandList, ppWriteTexture, ppReadTexture);
-		DrawPPOutput(ppReadTexture);
-
-		RenderImGui();
-
-		CD3DX12_RESOURCE_BARRIER barrierBack = CD3DX12_RESOURCE_BARRIER::Transition(
-			CurrentBackBuffer(),
-			D3D12_RESOURCE_STATE_RENDER_TARGET,
-			D3D12_RESOURCE_STATE_PRESENT);
-		commandList->ResourceBarrier(1, &barrierBack);
-		ThrowIfFailed(commandList->Close());
-		ID3D12CommandList* cmdsLists[] = { commandList.Get() };
-		commandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
-
-		ThrowIfFailed(swapChain->Present(0, 0));
-		currentBackBuffer = (currentBackBuffer + 1) % 2;
-	}
-	
-
-	currentFence++;
-	currentFrameResource->Fence = currentFence;
-	ThrowIfFailed(commandQueue->Signal(fence.Get(), currentFence));
+	d3dUtil::Barrier(commandList, &hdrTexture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	d3dUtil::Barrier(commandList, &historyA, D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
 }

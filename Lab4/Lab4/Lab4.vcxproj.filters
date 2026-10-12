@@ -13,6 +13,15 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{29746f0e-9471-4174-b696-acf08e51f069}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Файлы заголовков\ImGui">
+      <UniqueIdentifier>{affbda61-3e42-457f-83a2-f772a5d02ffc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Исходные файлы\ImGui">
+      <UniqueIdentifier>{f6c93f09-2940-4635-8ebf-d0ca45e7a917}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="winmain.cpp">
@@ -99,29 +108,32 @@
     <ClCompile Include="input_handler.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="imgui\imgui.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
-    <ClCompile Include="imgui\imgui_draw.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
-    <ClCompile Include="imgui\imgui_tables.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
-    <ClCompile Include="imgui\imgui_widgets.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
-    <ClCompile Include="imgui\backends\imgui_impl_dx12.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
-    <ClCompile Include="imgui\backends\imgui_impl_win32.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
     <ClCompile Include="command.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="frame_resource.cpp">
       <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="history.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui\imgui.cpp">
+      <Filter>Исходные файлы\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui\imgui_draw.cpp">
+      <Filter>Исходные файлы\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui\backends\imgui_impl_dx12.cpp">
+      <Filter>Исходные файлы\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui\backends\imgui_impl_win32.cpp">
+      <Filter>Исходные файлы\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui\imgui_tables.cpp">
+      <Filter>Исходные файлы\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui\imgui_widgets.cpp">
+      <Filter>Исходные файлы\ImGui</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -215,118 +227,106 @@
     <ClInclude Include="pbf_simulator.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
-    <ClInclude Include="imgui\imgui.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui\backends\imgui_impl_dx12.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui\backends\imgui_impl_win32.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui\imconfig.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui\imgui_internal.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui\imstb_rectpack.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui\imstb_textedit.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui\imstb_truetype.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
     <ClInclude Include="frame_resource.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
     <ClInclude Include="viewport_constants.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
+    <ClInclude Include="history.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui\imconfig.h">
+      <Filter>Файлы заголовков\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui\imgui.h">
+      <Filter>Файлы заголовков\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui\backends\imgui_impl_dx12.h">
+      <Filter>Файлы заголовков\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui\backends\imgui_impl_win32.h">
+      <Filter>Файлы заголовков\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui\imgui_internal.h">
+      <Filter>Файлы заголовков\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui\imstb_rectpack.h">
+      <Filter>Файлы заголовков\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui\imstb_textedit.h">
+      <Filter>Файлы заголовков\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui\imstb_truetype.h">
+      <Filter>Файлы заголовков\ImGui</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="PBF_structures.hlsli">
-      <Filter>Файлы заголовков</Filter>
+      <Filter>Shaders</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="shaders\gbuffer.hlsl">
-      <Filter>Исходные файлы</Filter>
-    </FxCompile>
-    <FxCompile Include="shaders\bulb.hlsl">
-      <Filter>Исходные файлы</Filter>
-    </FxCompile>
     <FxCompile Include="shaders\light.hlsl">
-      <Filter>Исходные файлы</Filter>
-    </FxCompile>
-    <FxCompile Include="shaders\tess.hlsl">
-      <Filter>Исходные файлы</Filter>
-    </FxCompile>
-    <FxCompile Include="shaders\HullShader.hlsl">
-      <Filter>Исходные файлы</Filter>
-    </FxCompile>
-    <FxCompile Include="shaders\DomainShader.hlsl">
-      <Filter>Исходные файлы</Filter>
+      <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="shaders\baked.hlsl">
-      <Filter>Исходные файлы</Filter>
-    </FxCompile>
-    <FxCompile Include="shaders\wireframe.hlsl">
-      <Filter>Исходные файлы</Filter>
-    </FxCompile>
-    <FxCompile Include="shaders\particles.hlsl">
-      <Filter>Исходные файлы</Filter>
-    </FxCompile>
-    <FxCompile Include="shaders\particleGS.hlsl">
-      <Filter>Исходные файлы</Filter>
-    </FxCompile>
-    <FxCompile Include="shaders\particleUpdateCS.hlsl">
-      <Filter>Исходные файлы</Filter>
-    </FxCompile>
-    <FxCompile Include="shaders\particleEmitCS.hlsl">
-      <Filter>Исходные файлы</Filter>
-    </FxCompile>
-    <FxCompile Include="shaders\shadowVS.hlsl">
-      <Filter>Исходные файлы</Filter>
+      <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="shaders\billboard.hlsl">
-      <Filter>Исходные файлы</Filter>
+      <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="shaders\PPTonemapping.hlsl">
-      <Filter>Исходные файлы</Filter>
+    <FxCompile Include="shaders\bulb.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\DomainShader.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\gbuffer.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\HullShader.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\particleEmitCS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\particleGS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\particles.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\particleUpdateCS.hlsl">
+      <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="shaders\PPOutput.hlsl">
-      <Filter>Исходные файлы</Filter>
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\PPTonemapping.hlsl">
+      <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="shaders\PPVignette.hlsl">
-      <Filter>Исходные файлы</Filter>
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\shadowVS.hlsl">
+      <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="shaders\ssao.hlsl">
-      <Filter>Исходные файлы</Filter>
+      <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="shaders\ssaoBlur.hlsl">
-      <Filter>Исходные файлы</Filter>
+      <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="PBF_apply_forces.hlsl">
-      <Filter>Исходные файлы</Filter>
+    <FxCompile Include="shaders\TAAResolve.hlsl">
+      <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="PBF_hash_particles.hlsl">
-      <Filter>Исходные файлы</Filter>
+    <FxCompile Include="shaders\tess.hlsl">
+      <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="PBF_find_neighbors.hlsl">
-      <Filter>Исходные файлы</Filter>
-    </FxCompile>
-    <FxCompile Include="PBF_calculate_lambda.hlsl">
-      <Filter>Исходные файлы</Filter>
-    </FxCompile>
-    <FxCompile Include="PBF_apply_delta.hlsl">
-      <Filter>Исходные файлы</Filter>
-    </FxCompile>
-    <FxCompile Include="PBF_update_velocities.hlsl">
-      <Filter>Исходные файлы</Filter>
+    <FxCompile Include="shaders\wireframe.hlsl">
+      <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>
 </Project>

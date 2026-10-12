@@ -8,6 +8,7 @@
 #include "post_process.h"
 #include "ssao.h"
 #include "singletone_device.h"
+#include "history.h"
 
 void RenderingSystem::CreateOpaqueRS() {
 	CD3DX12_ROOT_PARAMETER slotRootParameter[9];
@@ -941,6 +942,7 @@ RenderingSystem::RenderingSystem(int width, int height, ID3D12Resource* noiseTex
 	g_buffer = std::make_unique<GBuffer>(width, height);
 	post_process = std::make_unique<PostProcess>(width, height);
 	ssao = std::make_unique<SSAO>(width / 2, height / 2, g_buffer->GetDepthTex().Resource.Get(), g_buffer->GetNormalTex().Resource.Get(), noiseTexture);
+	history = std::make_unique<History>(width, height);
 
 	LightConstants sun = {};
 	sun.lightType = 0; // Directional

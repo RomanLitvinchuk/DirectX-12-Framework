@@ -8,6 +8,7 @@
 class GBuffer;
 class PostProcess;
 class SSAO;
+class History;
 
 using namespace Microsoft::WRL;
 using namespace DirectX::SimpleMath;
@@ -130,6 +131,10 @@ public:
 	ComPtr<ID3DBlob> billboardVS_ = nullptr;
 	ComPtr<ID3DBlob> billboardPS_ = nullptr;
 
+	ComPtr<ID3D12RootSignature> TAAResolveRS_ = nullptr;
+	ComPtr<ID3D12PipelineState> TAAResolvePSO_ = nullptr;
+	ComPtr<ID3DBlob> TAAResolvePS_ = nullptr;
+
 	ComPtr<ID3D12RootSignature> pp_defaultRS_ = nullptr;
 	ComPtr<ID3D12PipelineState> pp_tonemappingPSO_ = nullptr;
 	ComPtr<ID3DBlob> pp_tonemappingPS_ = nullptr;
@@ -144,6 +149,9 @@ public:
 	std::unique_ptr<GBuffer> g_buffer = nullptr;
 	std::unique_ptr<PostProcess> post_process = nullptr;
 	std::unique_ptr<SSAO> ssao = nullptr;
+	std::unique_ptr<History> history = nullptr;
+
+	bool bVignette = true;
 
 	std::vector<LightConstants> sceneLights_;
 	ComPtr<ID3D12DescriptorHeap> samplerHeap = nullptr;

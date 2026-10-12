@@ -50,7 +50,7 @@ public:
 
 	void CalculateGameStats(HWND hWnd);
 
-	void sortLODs();
+	void SortLODs();
 	void Draw();
 	void DrawShadows();
 	void DrawSSAO();
@@ -68,6 +68,8 @@ public:
 	void DrawPPTonemap(MyTexture* readHDR);
 	void DrawPPVignette(MyTexture* readLDR, MyTexture* writeLDR);
 	void DrawPPOutput(MyTexture* readLDR);
+
+	void InitHistoryTextureFromCurrentFrame();
 
 	void FlushCommandQueue();
 
@@ -248,7 +250,7 @@ private:
 	ComPtr<ID3D12Resource> readbackBuffer = nullptr;
 	D3D12_STREAM_OUTPUT_BUFFER_VIEW streamOutputBufferView = {};
 	bool bIsFirstFrame = true;
-	bool bHistoryValid = true;
+	bool bHistoryValid = false;
 	uint32_t frameIndex = 0;
 
 	std::unique_ptr<ShadowMap> shadowMap;

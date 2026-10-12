@@ -13,7 +13,9 @@
 #include "imgui_impl_dx12.h"
 #include "imgui_impl_win32.h"
 #include "singletone_device.h"
+#include "history.h"
 #include <unordered_map>
+#include <numeric>
 
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
@@ -119,6 +121,7 @@ void DX12App::BuildImGui() {
 	ImGui::Text("Frame time: %.3f ms", 1000.0f / ImGui::GetIO().Framerate);
 	ImGui::Separator();
 	ImGui::Checkbox("Frustum culling", &camera.bIsFrustumCullingEnabled);
+	ImGui::Checkbox("Vignette", &renderSystem->bVignette);
 	ImGui::End();
 }
 
@@ -330,6 +333,58 @@ void DX12App::CalculateGameStats(HWND hWnd) {
 	}
 }
 
+void DX12App::SortLODs() {
+	GetVisibleObjects();
+	for (UINT idx : visibleIndices) {
+		auto& sm = sceneData.submeshes[idx];
+		sm.sorted_lod0.clear();
+		sm.sorted_lod1.clear();
+		sm.sorted_billboards.clear();
+		sm.sorted_lod0.reserve(sm.InstanceCount);
+		if (sm.hasLOD1) sm.sorted_lod1.reserve(sm.InstanceCount);
+
+		for (int i = 0; i < sm.InstanceCount; i++) {
+			Vector3 instancePos(sm.instances[i].World_._41, sm.instances[i].World_._42, sm.instances[i].World_._43);
+			float distSq = Vector3::DistanceSquared(camera.mCameraPos, instancePos);
+
+			if (sm.hasLOD1 && distSq > BILLBOARD_DISTANCE) {
+				sm.sorted_billboards.push_back(sm.instances[i]);
+			}
+			else if (sm.hasLOD1 && distSq > LOD_DISTANCE)
+			{
+				sm.sorted_lod1.push_back(sm.instances[i]);
+			}
+			else {
+				sm.sorted_lod0.push_back(sm.instances[i]);
+			}
+		}
+	}
+}
+
+void DX12App::GetVisibleObjects() {
+	visibleIndices.clear();
+	if (camera.bIsFrustumCullingEnabled)
+	{
+		octree.GetVisibleObjects(camera.frustum, sceneData.submeshes, visibleIndices);
+	}
+	else
+	{
+		visibleIndices.resize(sceneData.submeshes.size());
+		std::iota(visibleIndices.begin(), visibleIndices.end(), 0);
+	}
+}
+
+void DX12App::InitRenderSystem() {
+	ID3D12Resource* noiseTexResource = nullptr;
+	auto iter = sceneData.textures.find(L"noise");
+	if (iter != sceneData.textures.end()) {
+		noiseTexResource = iter->second->Resource.Get();
+	}
+	renderSystem = new RenderingSystem(clientWidth, clientHeight, noiseTexResource);
+
+	CreateStructuredBuffersSRV();
+}
+
 void DX12App::FlushCommandQueue()
 {
 	currentFence++;
@@ -407,6 +462,8 @@ void DX12App::OnResize() {
 	CreateDSV();
 	renderSystem->g_buffer->OnResize(clientWidth, clientHeight);
 	renderSystem->post_process->OnResize(clientWidth, clientHeight);
+	renderSystem->history->OnResize(clientWidth, clientHeight);
+	bHistoryValid = false;
 	ID3D12Resource* noiseTexResource = nullptr;
 	auto iter = sceneData.textures.find(L"noise");
 	if (iter != sceneData.textures.end()) {

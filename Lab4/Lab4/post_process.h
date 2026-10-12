@@ -24,6 +24,7 @@ private:
 	void CreateRTV();
 	void BarriersToDefault(ComPtr<ID3D12GraphicsCommandList> commandList);
 	void ResetTextures();
+
 public:
 	void ClearPostProcess(ComPtr<ID3D12GraphicsCommandList> commandList);
 	void OnResize(int width, int height);
