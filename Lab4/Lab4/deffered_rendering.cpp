@@ -396,3 +396,12 @@ void DX12App::InitHistoryTextureFromCurrentFrame()
 	d3dUtil::Barrier(commandList, &hdrTexture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	d3dUtil::Barrier(commandList, &historyA, D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
 }
+
+void DX12App::TAAResolve()
+{
+	commandList->SetPipelineState(renderSystem->TAAResolvePSO_.Get());
+	commandList->SetGraphicsRootSignature(renderSystem->TAAResolveRS_.Get());
+
+	auto rtv = renderSystem->post_process->GetHdrTextureB().rtvHandle;
+	commandList->OMSetRenderTargets(1, &rtv, true, nullptr);
+}

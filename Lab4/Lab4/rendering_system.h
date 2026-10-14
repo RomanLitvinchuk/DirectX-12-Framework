@@ -57,6 +57,9 @@ private:
 	void CreateBillboardRS();
 	void CreateBillboardPSO();
 
+	void CreateTAAResolveRS();
+	void CreateTAAResolvePSO();
+
 	void CreatePPDefaultRS();
 	void CreatePPTonemappingPSO();
 

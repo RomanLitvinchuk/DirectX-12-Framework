@@ -156,14 +156,10 @@ void DX12App::InitializeDevice() {
 	device = SingletonDevice::GetDevice();
 
 	ThrowIfFailed(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)));
-	std::cout << "FENCE CREATED" << std::endl;
 
 	rtvDescriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	dsvDescriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 	cbvDescriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	std::cout << "RTV size: " << std::to_string(rtvDescriptorSize) << "\n"
-		<< "DSV size: " << std::to_string(dsvDescriptorSize) << "\n"
-		<< "CbvSrvUav size:" << std::to_string(cbvDescriptorSize) << std::endl;
 
 	msQualityLevels_.Format = backBufferFormat;
 	msQualityLevels_.SampleCount = 4;
@@ -341,7 +337,17 @@ void DX12App::SortLODs() {
 		sm.sorted_lod1.clear();
 		sm.sorted_billboards.clear();
 		sm.sorted_lod0.reserve(sm.InstanceCount);
-		if (sm.hasLOD1) sm.sorted_lod1.reserve(sm.InstanceCount);
+
+		if (!sm.hasLOD1)
+		{
+			for (int i = 0; i < sm.InstanceCount; i++)
+			{
+				sm.sorted_lod0.push_back(sm.instances[i]);
+			}
+			continue;
+		}
+
+		sm.sorted_lod1.reserve(sm.InstanceCount);
 
 		for (int i = 0; i < sm.InstanceCount; i++) {
 			Vector3 instancePos(sm.instances[i].World_._41, sm.instances[i].World_._42, sm.instances[i].World_._43);
@@ -354,6 +360,7 @@ void DX12App::SortLODs() {
 			{
 				sm.sorted_lod1.push_back(sm.instances[i]);
 			}
+
 			else {
 				sm.sorted_lod0.push_back(sm.instances[i]);
 			}

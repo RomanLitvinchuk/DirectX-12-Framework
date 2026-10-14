@@ -263,9 +263,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="PBF_structures.hlsli">
-      <Filter>Shaders</Filter>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shaders\light.hlsl">

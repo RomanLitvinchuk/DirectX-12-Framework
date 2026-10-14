@@ -50,18 +50,8 @@ public:
 
 	void CalculateGameStats(HWND hWnd);
 
-	void SortLODs();
+
 	void Draw();
-	void DrawShadows();
-	void DrawSSAO();
-	void BlurSSAO();
-	void DrawToGBuffer();
-	void DrawLights();
-	void DrawNYBalls();
-	void DrawToStreamOutput();
-	void DrawWireframe();
-	void DrawParticles();
-	void ComputeParticles();
 	void EmitParticles();
 	void InitEmitter();
 
@@ -138,6 +128,18 @@ private:
 	void DrawBakedMeshToGBuffer(UINT& currentInstanceOffset, Submesh& sm);
 	void DrawLOD1ToGBuffer(UINT& currentInstanceOffset, Submesh& sm);
 	void DrawBillboardsToGBuffer(UINT& currentInstanceOffset, Submesh& sm);
+	void SortLODs();
+	void TAAResolve();
+	void DrawShadows();
+	void DrawSSAO();
+	void BlurSSAO();
+	void DrawToGBuffer();
+	void DrawLights();
+	void DrawNYBalls();
+	void DrawToStreamOutput();
+	void DrawWireframe();
+	void DrawParticles();
+	void ComputeParticles();
 
 	void UpdateParticleData();
 	void UpdateMatricesData();

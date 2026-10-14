@@ -40,7 +40,7 @@ void History::ResetTextures()
 void History::CreateDescriptorHeaps()
 {
 	D3D12_DESCRIPTOR_HEAP_DESC heapDesc;
-	heapDesc.NumDescriptors = 2;
+	heapDesc.NumDescriptors = 3;
 	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	heapDesc.NodeMask = 0;
 	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
@@ -68,6 +68,11 @@ void History::CreateTextures(int screenWidth, int screenHeight)
 	ThrowIfFailed(device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resDesc, D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE, &clearValue, IID_PPV_ARGS(&historyB.Resource)));
 	historyB.Resource->SetName(L"HistoryB");
 	historyB.currentState = D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE;
+
+	ThrowIfFailed(device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resDesc, D3D12_RESOURCE_STATE_RENDER_TARGET, &clearValue, IID_PPV_ARGS(&lightTexture.Resource)));
+	lightTexture.Resource->SetName(L"Light texture");
+	lightTexture.currentState = D3D12_RESOURCE_STATE_RENDER_TARGET;
+
 }
 
 void History::CreateSRV()
@@ -87,7 +92,15 @@ void History::CreateSRV()
 
 	cpuHandle.Offset(1, srvIncSize);
 	gpuHandle.Offset(1, srvIncSize);
+	historyB.srvHandle = cpuHandle;
+	historyB.srvGpuHandle = gpuHandle;
 	device->CreateShaderResourceView(historyB.Resource.Get(), &srvDesc, cpuHandle);
+
+	cpuHandle.Offset(1, srvIncSize);
+	gpuHandle.Offset(1, srvIncSize);
+	lightTexture.srvHandle = cpuHandle;
+	lightTexture.srvGpuHandle = gpuHandle;
+	device->CreateShaderResourceView(lightTexture.Resource.Get(), &srvDesc, cpuHandle);
 }
 
 void History::CreateRTV()
@@ -103,6 +116,11 @@ void History::CreateRTV()
 	device->CreateRenderTargetView(historyA.Resource.Get(), &rtvDesc, rtvHandle);
 
 	rtvHandle.Offset(1, rtvIncSize);
+	historyB.rtvHandle = rtvHandle;
 	device->CreateRenderTargetView(historyB.Resource.Get(), &rtvDesc, rtvHandle);
+
+	rtvHandle.Offset(1, rtvIncSize);
+	lightTexture.rtvHandle = rtvHandle;
+	device->CreateRenderTargetView(lightTexture.Resource.Get(), &rtvDesc, rtvHandle);
 }
 

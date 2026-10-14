@@ -99,6 +99,8 @@ void RenderingSystem::CompileShaders() {
 	billboardVS_ = d3dUtil::CompileShader(L"shaders/billboard.hlsl", nullptr, "VS", "vs_5_0");
 	billboardPS_ = d3dUtil::CompileShader(L"shaders/billboard.hlsl", nullptr, "PS", "ps_5_0");
 
+	TAAResolvePS_ = d3dUtil::CompileShader(L"shaders/TAAResolve.hlsl", nullptr, "PS", "ps_5_0");
+
 	pp_tonemappingPS_ = d3dUtil::CompileShader(L"shaders/PPTonemapping.hlsl", nullptr, "PS", "ps_5_0");
 	pp_vignettePS_ = d3dUtil::CompileShader(L"shaders/PPVignette.hlsl", nullptr, "PS", "ps_5_0");
 	pp_outputPS_ = d3dUtil::CompileShader(L"shaders/PPOutput.hlsl", nullptr, "PS", "ps_5_0");
@@ -785,6 +787,61 @@ void RenderingSystem::CreateBillboardPSO()
 	ThrowIfFailed(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&billboardPSO_)));
 }
 
+void RenderingSystem::CreateTAAResolveRS()
+{
+	CD3DX12_ROOT_PARAMETER rootParameter[2];
+	CD3DX12_DESCRIPTOR_RANGE texTable;
+	texTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 2, 0);
+	CD3DX12_DESCRIPTOR_RANGE samplerTable;
+	samplerTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 2, 0);
+
+	rootParameter[0].InitAsDescriptorTable(1, &texTable);
+	rootParameter[1].InitAsDescriptorTable(1, &samplerTable);
+
+	CD3DX12_ROOT_SIGNATURE_DESC rootDesc(_countof(rootParameter), rootParameter, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+	ComPtr<ID3DBlob> errorBlob;
+	ComPtr<ID3DBlob> serializedRootDesc;
+
+	ThrowIfFailed(D3D12SerializeRootSignature(&rootDesc, D3D_ROOT_SIGNATURE_VERSION_1, serializedRootDesc.GetAddressOf(), errorBlob.GetAddressOf()));
+
+	if (errorBlob != nullptr) {
+		OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+	}
+
+	ThrowIfFailed(device->CreateRootSignature(0, serializedRootDesc->GetBufferPointer(), serializedRootDesc->GetBufferSize(), IID_PPV_ARGS(&TAAResolveRS_)));
+}
+
+void RenderingSystem::CreateTAAResolvePSO()
+{
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;
+	ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
+	psoDesc.InputLayout = { nullptr, 0 };
+	psoDesc.pRootSignature = TAAResolveRS_.Get();
+	psoDesc.VS = { reinterpret_cast<BYTE*>(fullscreenTriangleVS_->GetBufferPointer()), fullscreenTriangleVS_->GetBufferSize() };
+	psoDesc.PS = { reinterpret_cast<BYTE*>(TAAResolvePS_->GetBufferPointer()), TAAResolvePS_->GetBufferSize() };
+	CD3DX12_RASTERIZER_DESC rastDesc(D3D12_DEFAULT);
+	rastDesc.FrontCounterClockwise = false;
+	psoDesc.RasterizerState = rastDesc;
+	psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+
+	CD3DX12_DEPTH_STENCIL_DESC dsDesc(D3D12_DEFAULT);
+	dsDesc.DepthEnable = false;
+	dsDesc.StencilEnable = false;
+	dsDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+	dsDesc.DepthFunc = D3D12_COMPARISON_FUNC_GREATER;
+
+	psoDesc.DepthStencilState = dsDesc;
+	psoDesc.SampleMask = UINT_MAX;
+	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	psoDesc.NumRenderTargets = 1;
+	psoDesc.RTVFormats[0] = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	psoDesc.SampleDesc.Count = 1;
+	psoDesc.SampleDesc.Quality = 0;
+	psoDesc.DSVFormat = DXGI_FORMAT_UNKNOWN;
+	ThrowIfFailed(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&TAAResolvePSO_)));
+}
+ 
 void RenderingSystem::CreatePPDefaultRS()
 {
 	CD3DX12_ROOT_PARAMETER rootParameter[2];
@@ -959,6 +1016,9 @@ RenderingSystem::RenderingSystem(int width, int height, ID3D12Resource* noiseTex
 	CreatePPTonemappingPSO();
 	CreatePPVignettePSO();
 	CreatePPOutputPSO();
+
+	CreateTAAResolveRS();
+	CreateTAAResolvePSO();
 
 
 

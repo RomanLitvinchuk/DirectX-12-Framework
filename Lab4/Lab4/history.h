@@ -19,6 +19,7 @@ public:
 private:
 	MyTexture historyA;
 	MyTexture historyB;
+	MyTexture lightTexture;
 	ComPtr<ID3D12DescriptorHeap> srvHeap;
 	ComPtr<ID3D12DescriptorHeap> rtvHeap;
 	ComPtr<ID3D12Device> device = nullptr;
