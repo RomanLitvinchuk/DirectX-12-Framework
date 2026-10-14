@@ -2,6 +2,7 @@
 #include "singletone_device.h"
 #include "throw_if_failed.h"
 #include "d3dx12.h"
+#include "d3dUtil.h"
 
 History::History(int screenWidth, int screenHeight)
 {
@@ -10,6 +11,7 @@ History::History(int screenWidth, int screenHeight)
 	CreateTextures(screenWidth, screenHeight);
 	CreateSRV();
 	CreateRTV();
+	CreateSamplers();
 }
 
 
@@ -26,21 +28,42 @@ MyTexture& History::GetHistoryA()
 	return historyA; 
 }
 
-MyTexture& History::GetHistoryB()
+MyTexture& History::GetLightTexture()
 {
-	return historyB;
+	return lightTexture;
+}
+
+ID3D12DescriptorHeap* History::GetSrvHeap()
+{
+	return srvHeap.Get();
+}
+
+ID3D12DescriptorHeap* History::GetSamplerHeap()
+{
+	return samplerHeap.Get();
+}
+
+void History::LightBarrier(ComPtr<ID3D12GraphicsCommandList> commandList)
+{
+	d3dUtil::Barrier(commandList, &lightTexture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 }
 
 void History::ResetTextures()
 {
 	historyA.Resource.Reset();
-	historyB.Resource.Reset();
+	lightTexture.Resource.Reset();
+}
+
+void History::ClearLightTexture(ComPtr<ID3D12GraphicsCommandList> commandList)
+{
+	d3dUtil::Barrier(commandList, &lightTexture, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	commandList->ClearRenderTargetView(lightTexture.rtvHandle, Color(0.0f, 0.0f, 0.0f, 1.0f), 0, nullptr);
 }
 
 void History::CreateDescriptorHeaps()
 {
 	D3D12_DESCRIPTOR_HEAP_DESC heapDesc;
-	heapDesc.NumDescriptors = 3;
+	heapDesc.NumDescriptors = 2;
 	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	heapDesc.NodeMask = 0;
 	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
@@ -49,6 +72,11 @@ void History::CreateDescriptorHeaps()
 	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	ThrowIfFailed(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&rtvHeap)));
+
+	heapDesc.NumDescriptors = 2;
+	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
+	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	ThrowIfFailed(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&samplerHeap)));
 }
 
 void History::CreateTextures(int screenWidth, int screenHeight)
@@ -61,13 +89,9 @@ void History::CreateTextures(int screenWidth, int screenHeight)
 	clearValue.Color[1] = 0.0f;
 	clearValue.Color[2] = 0.0f;
 	clearValue.Color[3] = 1.0f;
-	ThrowIfFailed(device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resDesc, D3D12_RESOURCE_STATE_RENDER_TARGET, &clearValue, IID_PPV_ARGS(&historyA.Resource)));
+	ThrowIfFailed(device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resDesc, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, &clearValue, IID_PPV_ARGS(&historyA.Resource)));
 	historyA.Resource->SetName(L"HistoryA");
-	historyA.currentState = D3D12_RESOURCE_STATE_RENDER_TARGET;
-
-	ThrowIfFailed(device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resDesc, D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE, &clearValue, IID_PPV_ARGS(&historyB.Resource)));
-	historyB.Resource->SetName(L"HistoryB");
-	historyB.currentState = D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE;
+	historyA.currentState = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 
 	ThrowIfFailed(device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resDesc, D3D12_RESOURCE_STATE_RENDER_TARGET, &clearValue, IID_PPV_ARGS(&lightTexture.Resource)));
 	lightTexture.Resource->SetName(L"Light texture");
@@ -92,12 +116,6 @@ void History::CreateSRV()
 
 	cpuHandle.Offset(1, srvIncSize);
 	gpuHandle.Offset(1, srvIncSize);
-	historyB.srvHandle = cpuHandle;
-	historyB.srvGpuHandle = gpuHandle;
-	device->CreateShaderResourceView(historyB.Resource.Get(), &srvDesc, cpuHandle);
-
-	cpuHandle.Offset(1, srvIncSize);
-	gpuHandle.Offset(1, srvIncSize);
 	lightTexture.srvHandle = cpuHandle;
 	lightTexture.srvGpuHandle = gpuHandle;
 	device->CreateShaderResourceView(lightTexture.Resource.Get(), &srvDesc, cpuHandle);
@@ -116,11 +134,28 @@ void History::CreateRTV()
 	device->CreateRenderTargetView(historyA.Resource.Get(), &rtvDesc, rtvHandle);
 
 	rtvHandle.Offset(1, rtvIncSize);
-	historyB.rtvHandle = rtvHandle;
-	device->CreateRenderTargetView(historyB.Resource.Get(), &rtvDesc, rtvHandle);
-
-	rtvHandle.Offset(1, rtvIncSize);
 	lightTexture.rtvHandle = rtvHandle;
 	device->CreateRenderTargetView(lightTexture.Resource.Get(), &rtvDesc, rtvHandle);
+}
+
+void History::CreateSamplers()
+{
+	CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle(samplerHeap->GetCPUDescriptorHandleForHeapStart());
+	auto samplerIncSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+	D3D12_SAMPLER_DESC samplerDesc = {};
+	samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+	samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	samplerDesc.MinLOD = 0;
+	samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
+	samplerDesc.MipLODBias = 0.0f;
+	samplerDesc.MaxAnisotropy = 1;
+	samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+	device->CreateSampler(&samplerDesc, cpuHandle);
+
+	cpuHandle.Offset(1, samplerIncSize);
+	samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+	device->CreateSampler(&samplerDesc, cpuHandle);
 }
 

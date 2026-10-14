@@ -1,5 +1,7 @@
-Texture2D currentFrame : register(t0);
-Texture2D historyFrame : register(t1);
+
+Texture2D historyFrame : register(t0);
+Texture2D currentFrame : register(t1);
+
 
 SamplerState s_PointClamp : register(s0);
 SamplerState s_LinearClamp : register(s1);

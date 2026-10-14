@@ -20,6 +20,7 @@ void DX12App::Draw()
 	renderSystem->g_buffer->ClearGBuffer(commandList);
 	renderSystem->post_process->ClearPostProcess(commandList);
 	renderSystem->ssao->ClearSSAO(commandList);
+	renderSystem->history->ClearLightTexture(commandList);
 
 
 	MyTexture* ppWriteTexture = &renderSystem->post_process->GetHdrTextureA();
@@ -36,7 +37,7 @@ void DX12App::Draw()
 	renderSystem->g_buffer->TransitToLightsRenderingState(commandList);
 	DrawLights();
 
-	if (bIsTreeVisible) DrawNYBalls();
+	//if (bIsTreeVisible) DrawNYBalls();
 
 	bool isEmitterInside = true;
 	if (camera.bIsFrustumCullingEnabled) {
@@ -55,12 +56,13 @@ void DX12App::Draw()
 
 	if (skipPresent)
 	{
-		InitHistoryTextureFromCurrentFrame();
+		InitHistoryTextureFromCurrentFrame(renderSystem->history->GetLightTexture());
 		bHistoryValid = true;
 		ImGui::EndFrame();
 	}
 	else
 	{
+		TAAResolve();
 		DrawWireframe();
 
 		CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
@@ -342,7 +344,7 @@ void DX12App::DrawLights() {
 		currentFrameResource->lightBuffer->CopyData(i, renderSystem->sceneLights_[i]);
 	}
 
-	D3D12_CPU_DESCRIPTOR_HANDLE rtv = renderSystem->post_process->GetHdrTextureA().rtvHandle;
+	D3D12_CPU_DESCRIPTOR_HANDLE rtv = renderSystem->history->GetLightTexture().rtvHandle;
 	commandList->OMSetRenderTargets(1, &rtv, true, nullptr);
 	ID3D12DescriptorHeap* descriptorHeaps[] = { renderSystem->g_buffer->GetSrvHeap().Get(), renderSystem->samplerHeap.Get()};
 	commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
@@ -361,6 +363,28 @@ void DX12App::DrawLights() {
 	CD3DX12_RESOURCE_BARRIER backBarriers[] = { CD3DX12_RESOURCE_BARRIER::Transition(shadowMap->Resource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_GENERIC_READ)};
 	commandList->ResourceBarrier(_countof(backBarriers), backBarriers);
 }
+
+void DX12App::TAAResolve()
+{
+	renderSystem->history->LightBarrier(commandList);
+	commandList->SetPipelineState(renderSystem->TAAResolvePSO_.Get());
+	commandList->SetGraphicsRootSignature(renderSystem->TAAResolveRS_.Get());
+
+	auto rtv = renderSystem->post_process->GetHdrTextureA().rtvHandle;
+	commandList->OMSetRenderTargets(1, &rtv, true, nullptr);
+
+	ID3D12DescriptorHeap* descriptorHeaps[] = {renderSystem->history->GetSrvHeap(), renderSystem->history->GetSamplerHeap()};
+	commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+
+	commandList->SetGraphicsRootDescriptorTable(0, renderSystem->history->GetSrvHeap()->GetGPUDescriptorHandleForHeapStart());
+	commandList->SetGraphicsRootDescriptorTable(1, renderSystem->history->GetSamplerHeap()->GetGPUDescriptorHandleForHeapStart());
+
+	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	commandList->DrawInstanced(3, 1, 0, 0);
+
+	InitHistoryTextureFromCurrentFrame(renderSystem->post_process->GetHdrTextureA());
+}
+
 
 void DX12App::DrawNYBalls()
 {
@@ -383,25 +407,17 @@ void DX12App::DrawNYBalls()
 	commandList->DrawIndexedInstanced(sphereIndexCount, 500, 0, 0, 0);
 }
 
-void DX12App::InitHistoryTextureFromCurrentFrame()
+void DX12App::InitHistoryTextureFromCurrentFrame(MyTexture& copyTexture)
 {
-	auto& hdrTexture = renderSystem->post_process->GetHdrTextureA();
 	auto& historyA = renderSystem->history->GetHistoryA();
 
-	d3dUtil::Barrier(commandList, &hdrTexture, D3D12_RESOURCE_STATE_COPY_SOURCE);
+	d3dUtil::Barrier(commandList, &copyTexture, D3D12_RESOURCE_STATE_COPY_SOURCE);
 	d3dUtil::Barrier(commandList, &historyA, D3D12_RESOURCE_STATE_COPY_DEST);
 
-	commandList->CopyResource(historyA.Resource.Get(), hdrTexture.Resource.Get());
+	commandList->CopyResource(historyA.Resource.Get(), copyTexture.Resource.Get());
 
-	d3dUtil::Barrier(commandList, &hdrTexture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	d3dUtil::Barrier(commandList, &historyA, D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
+	d3dUtil::Barrier(commandList, &copyTexture, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	d3dUtil::Barrier(commandList, &historyA, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 }
 
-void DX12App::TAAResolve()
-{
-	commandList->SetPipelineState(renderSystem->TAAResolvePSO_.Get());
-	commandList->SetGraphicsRootSignature(renderSystem->TAAResolveRS_.Get());
 
-	auto rtv = renderSystem->post_process->GetHdrTextureB().rtvHandle;
-	commandList->OMSetRenderTargets(1, &rtv, true, nullptr);
-}

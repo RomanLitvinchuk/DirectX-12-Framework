@@ -15,18 +15,23 @@ public:
 
 	void OnResize(int screenWidt, int screenHeight);
 	MyTexture& GetHistoryA();
-	MyTexture& GetHistoryB();
+	MyTexture& GetLightTexture();
+	ID3D12DescriptorHeap* GetSrvHeap();
+	ID3D12DescriptorHeap* GetSamplerHeap();
+	void LightBarrier(ComPtr<ID3D12GraphicsCommandList> commandList);
+	void ClearLightTexture(ComPtr<ID3D12GraphicsCommandList> commandList);
 private:
 	MyTexture historyA;
-	MyTexture historyB;
 	MyTexture lightTexture;
 	ComPtr<ID3D12DescriptorHeap> srvHeap;
 	ComPtr<ID3D12DescriptorHeap> rtvHeap;
+	ComPtr<ID3D12DescriptorHeap> samplerHeap;
 	ComPtr<ID3D12Device> device = nullptr;
 
 	void CreateDescriptorHeaps();
 	void CreateTextures(int screenWidth, int screenHeight);
 	void CreateSRV();
 	void CreateRTV();
+	void CreateSamplers();
 	void ResetTextures();
 };

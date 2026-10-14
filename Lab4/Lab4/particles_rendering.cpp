@@ -1,4 +1,5 @@
 #include "DX12App.h"
+#include "history.h"
 
 void DX12App::EmitParticles() {
 	commandList->SetPipelineState(renderSystem->particlesEmitPSO_.Get());
@@ -46,7 +47,7 @@ void DX12App::DrawParticles() {
 	commandList->SetPipelineState(renderSystem->particlePSO_.Get());
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
 
-	D3D12_CPU_DESCRIPTOR_HANDLE rtv = renderSystem->post_process->GetHdrTextureA().rtvHandle;
+	D3D12_CPU_DESCRIPTOR_HANDLE rtv = renderSystem->history->GetLightTexture().rtvHandle;
 	D3D12_CPU_DESCRIPTOR_HANDLE dsv = renderSystem->g_buffer->GetDepthTex().dsvHandle;
 	commandList->OMSetRenderTargets(1, &rtv, true, &dsv);
 

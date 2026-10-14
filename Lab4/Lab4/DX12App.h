@@ -59,8 +59,6 @@ public:
 	void DrawPPVignette(MyTexture* readLDR, MyTexture* writeLDR);
 	void DrawPPOutput(MyTexture* readLDR);
 
-	void InitHistoryTextureFromCurrentFrame();
-
 	void FlushCommandQueue();
 
 	void InitProjectionMatrix();
@@ -152,6 +150,8 @@ private:
 	void UpdateCameraConstants();
 	void UpdateViewportConstants();
 	float Halton(uint32_t index, uint32_t base);
+
+	void InitHistoryTextureFromCurrentFrame(MyTexture& copyTexture);
 
 
 
