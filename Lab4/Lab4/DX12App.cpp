@@ -511,8 +511,8 @@ void DX12App::OnResize() {
 	currentBackBuffer = 0;
 	CreateRTV();
 	CreateDSV();
-	renderSystem->g_buffer->OnResize(clientWidth, clientHeight);
-	renderSystem->post_process->OnResize(clientWidth, clientHeight);
+	renderSystem->gBuffer->OnResize(clientWidth, clientHeight);
+	renderSystem->postProcess->OnResize(clientWidth, clientHeight);
 	renderSystem->history->OnResize(clientWidth, clientHeight);
 	bHistoryValid = false;
 	ID3D12Resource* noiseTexResource = nullptr;
@@ -521,8 +521,8 @@ void DX12App::OnResize() {
 		noiseTexResource = iter->second->Resource.Get();
 	}
 	renderSystem->ssao->OnResize(clientWidth / 2, clientHeight / 2,
-		renderSystem->g_buffer->GetDepthTex().Resource.Get(),
-		renderSystem->g_buffer->GetNormalTex().Resource.Get(),
+		renderSystem->gBuffer->GetDepthTex().Resource.Get(),
+		renderSystem->gBuffer->GetNormalTex().Resource.Get(),
 		noiseTexResource);
 	SetViewport();
 	SetScissor();
@@ -599,11 +599,11 @@ void DX12App::Parsing() {
 void DX12App::InitShadowMap() {
 	shadowMap = std::make_unique<ShadowMap>(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
 
-	auto handle = renderSystem->g_buffer->GetSrvHeap()->GetCPUDescriptorHandleForHeapStart();
+	auto handle = renderSystem->gBuffer->GetSrvHeap()->GetCPUDescriptorHandleForHeapStart();
 	auto size = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	CD3DX12_CPU_DESCRIPTOR_HANDLE smHandle(handle, 4, size);
 
-	auto gpuHandle = renderSystem->g_buffer->GetSrvHeap()->GetGPUDescriptorHandleForHeapStart();
+	auto gpuHandle = renderSystem->gBuffer->GetSrvHeap()->GetGPUDescriptorHandleForHeapStart();
 	CD3DX12_GPU_DESCRIPTOR_HANDLE smGpuHandle(gpuHandle, 4, size);
 
 	auto dsvHandle = dsvHeap->GetCPUDescriptorHandleForHeapStart();

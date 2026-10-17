@@ -3,8 +3,8 @@
 #include <SimpleMath.h>
 #include <string>
 #include "instances.h"
-using namespace DirectX;
-using namespace SimpleMath;
+
+using namespace DirectX::SimpleMath;
 
 struct Submesh
 {

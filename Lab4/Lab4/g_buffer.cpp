@@ -13,17 +13,17 @@ GBuffer::GBuffer(int width, int height)
 	CreateRTVandDSV();
 };
 
-GBufferTexture& GBuffer::GetDiffuseTex() 
+MyTexture& GBuffer::GetDiffuseTex() 
 {
 	return diffuseTex;
 }
 
-GBufferTexture& GBuffer::GetNormalTex() 
+MyTexture& GBuffer::GetNormalTex() 
 {
 	return normalTex;
 }
 
-GBufferTexture& GBuffer::GetDepthTex() 
+MyTexture& GBuffer::GetDepthTex() 
 {
 	return depthTex;
 }

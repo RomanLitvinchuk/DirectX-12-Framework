@@ -3,7 +3,7 @@
 #include "throw_if_failed.h"
 #include "d3dx12.h"
 
-using namespace Microsoft::WRL;
+using Microsoft::WRL::ComPtr;
 
 template<typename T>
 class UploadBuffer

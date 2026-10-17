@@ -1,8 +1,7 @@
 #pragma once
 #include <SimpleMath.h>
 
-using namespace DirectX;
-using namespace SimpleMath;
+using namespace DirectX::SimpleMath;
 
 struct MaterialConstants
 {
@@ -34,7 +33,4 @@ struct MaterialConstants
     int hasBillboardTexture = 0;
     int pad[2];
 };
-
-//static_assert(sizeof(MaterialConstants) == 160,
-//    "MaterialConstants should be 160 bytes (16*5 + 4*3 + 4 + 64)");
 

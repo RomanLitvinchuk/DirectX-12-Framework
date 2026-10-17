@@ -2,8 +2,8 @@
 #include "history.h"
 
 void DX12App::EmitParticles() {
-	commandList->SetPipelineState(renderSystem->particlesEmitPSO_.Get());
-	commandList->SetComputeRootSignature(renderSystem->particlesEmitRS_.Get());
+	commandList->SetPipelineState(renderSystem->particlesEmitPSO.Get());
+	commandList->SetComputeRootSignature(renderSystem->particlesEmitRS.Get());
 	ID3D12DescriptorHeap* heaps[] = { uavHeap.Get() };
 	commandList->SetDescriptorHeaps(_countof(heaps), heaps);
 	CD3DX12_RESOURCE_BARRIER toUAV = CD3DX12_RESOURCE_BARRIER::Transition(RWParticleBuffer.Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
@@ -21,8 +21,8 @@ void DX12App::EmitParticles() {
 }
 
 void DX12App::ComputeParticles() {
-	commandList->SetPipelineState(renderSystem->particlesUpdatePSO_.Get());
-	commandList->SetComputeRootSignature(renderSystem->particlesUpdateRS_.Get());
+	commandList->SetPipelineState(renderSystem->particlesUpdatePSO.Get());
+	commandList->SetComputeRootSignature(renderSystem->particlesUpdateRS.Get());
 	commandList->SetComputeRootConstantBufferView(0, currentFrameResource->particleConstantsBuffer->Resource()->GetGPUVirtualAddress());
 	commandList->SetComputeRootUnorderedAccessView(1, RWParticleBuffer->GetGPUVirtualAddress());
 	CD3DX12_GPU_DESCRIPTOR_HANDLE uavHandle(
@@ -44,14 +44,14 @@ void DX12App::ComputeParticles() {
 }
 
 void DX12App::DrawParticles() {
-	commandList->SetPipelineState(renderSystem->particlePSO_.Get());
+	commandList->SetPipelineState(renderSystem->particlePSO.Get());
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
 
 	D3D12_CPU_DESCRIPTOR_HANDLE rtv = renderSystem->history->GetLightTexture().rtvHandle;
-	D3D12_CPU_DESCRIPTOR_HANDLE dsv = renderSystem->g_buffer->GetDepthTex().dsvHandle;
+	D3D12_CPU_DESCRIPTOR_HANDLE dsv = renderSystem->gBuffer->GetDepthTex().dsvHandle;
 	commandList->OMSetRenderTargets(1, &rtv, true, &dsv);
 
-	commandList->SetGraphicsRootSignature(renderSystem->particleRS_.Get());
+	commandList->SetGraphicsRootSignature(renderSystem->particleRS.Get());
 	
 	commandList->SetGraphicsRootConstantBufferView(0, currentFrameResource->matricesBuffer->Resource()->GetGPUVirtualAddress());
 	commandList->SetGraphicsRootShaderResourceView(1, RWParticleBuffer->GetGPUVirtualAddress());

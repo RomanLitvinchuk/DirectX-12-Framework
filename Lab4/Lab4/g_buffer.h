@@ -1,23 +1,16 @@
 #pragma once
 #include <d3d12.h>
 #include <wrl.h>
+#include "texture.h"
 
-using namespace Microsoft::WRL;
-
-struct GBufferTexture {
-	ComPtr<ID3D12Resource> Resource = nullptr;
-	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = {};
-	D3D12_CPU_DESCRIPTOR_HANDLE srvHandle = {};
-	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = {};
-};
-
+using Microsoft::WRL::ComPtr;
 
 class GBuffer {
 private:
 
-	GBufferTexture diffuseTex;
-	GBufferTexture normalTex;
-	GBufferTexture depthTex;
+	MyTexture diffuseTex;
+	MyTexture normalTex;
+	MyTexture depthTex;
 
 	ComPtr<ID3D12DescriptorHeap> rtvDescpritorHeap;
 	ComPtr<ID3D12DescriptorHeap> srvDescriptorHeap;
@@ -40,9 +33,9 @@ public:
 	void OnResize(int width, int height);
 	void ClearGBuffer(ComPtr<ID3D12GraphicsCommandList> commandList);
 
-	GBufferTexture& GetDiffuseTex();
-	GBufferTexture& GetNormalTex();
-	GBufferTexture& GetDepthTex();
+	MyTexture& GetDiffuseTex();
+	MyTexture& GetNormalTex();
+	MyTexture& GetDepthTex();
 	ComPtr<ID3D12DescriptorHeap> GetSrvHeap();
 	ComPtr<ID3D12DescriptorHeap> GetRtvHeap();
 	ComPtr<ID3D12DescriptorHeap> GetDsvHeap();

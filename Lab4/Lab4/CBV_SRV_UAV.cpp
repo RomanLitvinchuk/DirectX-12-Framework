@@ -120,7 +120,7 @@ void DX12App::CreateStructuredBuffersSRV() {
 	srvDesc.Buffer.StructureByteStride = sizeof(LightConstants);
 	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
-	auto handle = renderSystem->g_buffer->GetSrvHeap()->GetCPUDescriptorHandleForHeapStart();
+	auto handle = renderSystem->gBuffer->GetSrvHeap()->GetCPUDescriptorHandleForHeapStart();
 	auto size = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE SrvHandle(handle, 3, size);

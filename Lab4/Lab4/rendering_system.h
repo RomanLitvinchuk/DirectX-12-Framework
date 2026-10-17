@@ -4,16 +4,77 @@
 #include "light.h"
 #include <SimpleMath.h>
 #include <memory>
+#include "d3dx12.h"
 
 class GBuffer;
 class PostProcess;
 class SSAO;
 class History;
 
-using namespace Microsoft::WRL;
+using Microsoft::WRL::ComPtr;
 using namespace DirectX::SimpleMath;
 
 class RenderingSystem {
+public:
+	ComPtr<ID3D12RootSignature> opaqueRS = nullptr;
+	ComPtr<ID3D12PipelineState> opaquePSO = nullptr;
+
+	ComPtr<ID3D12RootSignature> lightRS = nullptr;
+	ComPtr<ID3D12PipelineState> lightPSO = nullptr;
+
+	ComPtr<ID3D12RootSignature> bulbRS = nullptr;
+	ComPtr<ID3D12PipelineState> bulbPSO = nullptr;
+
+	ComPtr<ID3D12RootSignature> streamOutputRS = nullptr;
+	ComPtr<ID3D12PipelineState> streamOutputPSO = nullptr;
+
+	ComPtr<ID3D12PipelineState> bakedPSO = nullptr;
+
+	ComPtr<ID3D12RootSignature> wireframeRS;
+	ComPtr<ID3D12PipelineState> wireframePSO;
+
+	ComPtr<ID3D12RootSignature> particleRS = nullptr;
+	ComPtr<ID3D12PipelineState> particlePSO = nullptr;
+
+	ComPtr<ID3D12RootSignature> particlesUpdateRS = nullptr;
+	ComPtr<ID3D12PipelineState> particlesUpdatePSO = nullptr;
+
+	ComPtr<ID3D12RootSignature> particlesEmitRS = nullptr;
+	ComPtr<ID3D12PipelineState> particlesEmitPSO = nullptr;
+
+	ComPtr<ID3D12RootSignature> shadowRS = nullptr;
+	ComPtr<ID3D12PipelineState> shadowPSO = nullptr;
+
+	ComPtr<ID3D12RootSignature> SsaoRS = nullptr;
+	ComPtr<ID3D12PipelineState> SsaoPSO = nullptr;
+
+	ComPtr<ID3D12RootSignature> SsaoBlurRS = nullptr;
+	ComPtr<ID3D12PipelineState> SsaoBlurPSO = nullptr;
+
+	ComPtr<ID3D12RootSignature> billboardRS = nullptr;
+	ComPtr<ID3D12PipelineState> billboardPSO = nullptr;
+
+	ComPtr<ID3D12RootSignature> TAAResolveRS = nullptr;
+	ComPtr<ID3D12PipelineState> TAAResolvePSO = nullptr;
+
+	ComPtr<ID3D12RootSignature> ppDefaultRS = nullptr;
+	ComPtr<ID3D12PipelineState> ppTonemappingPSO = nullptr;
+	ComPtr<ID3D12PipelineState> ppVignettePSO = nullptr;
+	ComPtr<ID3D12PipelineState> ppOutputPSO = nullptr;
+
+
+	std::unique_ptr<GBuffer> gBuffer = nullptr;
+	std::unique_ptr<PostProcess> postProcess = nullptr;
+	std::unique_ptr<SSAO> ssao = nullptr;
+	std::unique_ptr<History> history = nullptr;
+
+	bool bVignette = true;
+
+	std::vector<LightConstants> sceneLights;
+	ComPtr<ID3D12DescriptorHeap> samplerHeap = nullptr;
+
+	RenderingSystem(int width, int height, ID3D12Resource* noiseTexture);
+
 private:
 	ComPtr<ID3D12Device> device = nullptr;
 
@@ -69,99 +130,49 @@ private:
 
 	void GenerateTreeLights(std::vector<LightConstants>& lightsArray, Vector3 treeBasePosition, float treeHeight, float treeBaseRadius, int count);
 
-public:
-	ComPtr<ID3D12RootSignature> opaqueRS_ = nullptr;
-	ComPtr<ID3D12RootSignature> lightRS_ = nullptr;
+	ComPtr<ID3D12RootSignature> CreateRootSignature(const CD3DX12_ROOT_SIGNATURE_DESC& rootDesc);
 
-	ComPtr<ID3D12PipelineState> opaquePSO_ = nullptr;
-	ComPtr<ID3D12PipelineState> lightPSO_ = nullptr;
+	ComPtr<ID3DBlob> opaqueVS = nullptr;
+	ComPtr<ID3DBlob> opaquePS = nullptr;
 
-	ComPtr<ID3DBlob> opaqueVS_ = nullptr;
-	ComPtr<ID3DBlob> opaquePS_ = nullptr;
+	ComPtr<ID3DBlob> fullscreenTriangleVS = nullptr;
+	ComPtr<ID3DBlob> lightPS = nullptr;
 
-	ComPtr<ID3DBlob> fullscreenTriangleVS_ = nullptr;
-	ComPtr<ID3DBlob> lightPS_ = nullptr;
+	ComPtr<ID3DBlob> bulbVS = nullptr;
+	ComPtr<ID3DBlob> bulbPS = nullptr;
 
-	ComPtr<ID3D12RootSignature> bulbRS_ = nullptr;
-	ComPtr<ID3D12PipelineState> bulbPSO_ = nullptr;
-	ComPtr<ID3DBlob> bulbVS_ = nullptr;
-	ComPtr<ID3DBlob> bulbPS_ = nullptr;
+	ComPtr<ID3DBlob> HullShader = nullptr;
+	ComPtr<ID3DBlob> DomainShader = nullptr;
 
-	ComPtr<ID3DBlob> HS_ = nullptr;
-	ComPtr<ID3DBlob> DS_ = nullptr;
+	ComPtr<ID3DBlob> tessVS = nullptr;
 
-	ComPtr<ID3DBlob> tessVS_ = nullptr;
+	ComPtr<ID3DBlob> bakedVS = nullptr;
 
-	ComPtr<ID3D12RootSignature> streamOutputRS_ = nullptr;
-	ComPtr<ID3D12PipelineState> streamOutputPSO_ = nullptr;
+	ComPtr<ID3DBlob> wireframeVS = nullptr;
+	ComPtr<ID3DBlob> wireframePS = nullptr;
 
-	ComPtr<ID3D12PipelineState> bakedPSO_ = nullptr;
-	ComPtr<ID3DBlob> bakedVS_ = nullptr;
+	ComPtr<ID3DBlob> particleVS = nullptr;
+	ComPtr<ID3DBlob> particleGS = nullptr;
+	ComPtr<ID3DBlob> particlePS = nullptr;
+	ComPtr<ID3DBlob> particleUpdateCS = nullptr;
+	ComPtr<ID3DBlob> particleEmitCS = nullptr;
 
-	ComPtr<ID3D12RootSignature> wireframeRS_;
-	ComPtr<ID3D12PipelineState> wireframePSO_;
-	ComPtr<ID3DBlob> wireframeVS_ = nullptr;
-	ComPtr<ID3DBlob> wireframePS_ = nullptr;
+	ComPtr<ID3DBlob> shadowVS = nullptr;
 
-	ComPtr<ID3D12RootSignature> particleRS_ = nullptr;
-	ComPtr<ID3D12PipelineState> particlePSO_ = nullptr;
-	ComPtr<ID3DBlob> particleVS_ = nullptr;
-	ComPtr<ID3DBlob> particleGS_ = nullptr;
-	ComPtr<ID3DBlob> particlePS_ = nullptr;
+	ComPtr<ID3DBlob> SsaoPS = nullptr;
+	ComPtr<ID3DBlob> SsaoBlurPS = nullptr;
 
-	ComPtr<ID3D12RootSignature> particlesUpdateRS_ = nullptr;
-	ComPtr<ID3D12PipelineState> particlesUpdatePSO_ = nullptr;
-	ComPtr<ID3DBlob> particleUpdateCS_ = nullptr;
+	ComPtr<ID3DBlob> billboardVS = nullptr;
+	ComPtr<ID3DBlob> billboardPS = nullptr;
 
-	ComPtr<ID3D12RootSignature> particlesEmitRS_ = nullptr;
-	ComPtr<ID3D12PipelineState> particlesEmitPSO_ = nullptr;
-	ComPtr<ID3DBlob> particleEmitCS_ = nullptr;
+	ComPtr<ID3DBlob> TAAResolvePS = nullptr;
 
-	ComPtr<ID3D12RootSignature> shadowRS_ = nullptr;
-	ComPtr<ID3D12PipelineState> shadowPSO_ = nullptr;
-	ComPtr<ID3DBlob> shadowVS_ = nullptr;
+	ComPtr<ID3DBlob> ppTonemappingPS = nullptr;
+	ComPtr<ID3DBlob> ppVignettePS = nullptr;
+	ComPtr<ID3DBlob> ppOutputRS = nullptr;
 
-	ComPtr<ID3D12RootSignature> SsaoRS_ = nullptr;
-	ComPtr<ID3D12PipelineState> SsaoPSO_ = nullptr;
-	ComPtr<ID3DBlob> SsaoPS_ = nullptr;
-
-	ComPtr<ID3D12RootSignature> SsaoBlurRS_ = nullptr;
-	ComPtr<ID3D12PipelineState> SsaoBlurPSO_ = nullptr;
-	ComPtr<ID3DBlob> SsaoBlurPS_ = nullptr;
-
-	ComPtr<ID3D12RootSignature> billboardRS_ = nullptr;
-	ComPtr<ID3D12PipelineState> billboardPSO_ = nullptr;
-	ComPtr<ID3DBlob> billboardVS_ = nullptr;
-	ComPtr<ID3DBlob> billboardPS_ = nullptr;
-
-	ComPtr<ID3D12RootSignature> TAAResolveRS_ = nullptr;
-	ComPtr<ID3D12PipelineState> TAAResolvePSO_ = nullptr;
-	ComPtr<ID3DBlob> TAAResolvePS_ = nullptr;
-
-	ComPtr<ID3D12RootSignature> pp_defaultRS_ = nullptr;
-	ComPtr<ID3D12PipelineState> pp_tonemappingPSO_ = nullptr;
-	ComPtr<ID3DBlob> pp_tonemappingPS_ = nullptr;
-
-	ComPtr<ID3D12PipelineState> pp_vignettePSO_ = nullptr;
-	ComPtr<ID3DBlob> pp_vignettePS_ = nullptr;
-
-	ComPtr<ID3D12PipelineState> pp_outputPSO_ = nullptr;
-	ComPtr<ID3DBlob> pp_outputPS_ = nullptr;
-
-
-	std::unique_ptr<GBuffer> g_buffer = nullptr;
-	std::unique_ptr<PostProcess> post_process = nullptr;
-	std::unique_ptr<SSAO> ssao = nullptr;
-	std::unique_ptr<History> history = nullptr;
-
-	bool bVignette = true;
-
-	std::vector<LightConstants> sceneLights_;
-	ComPtr<ID3D12DescriptorHeap> samplerHeap = nullptr;
-
-	std::vector<D3D12_INPUT_ELEMENT_DESC> inputLayout_;
-	std::vector<D3D12_INPUT_ELEMENT_DESC> bakedLayout_;
-	std::vector<D3D12_INPUT_ELEMENT_DESC> wireframeLayout_;
-
-	RenderingSystem(int width, int height, ID3D12Resource* noiseTexture);
+	std::vector<D3D12_INPUT_ELEMENT_DESC> inputLayout;
+	std::vector<D3D12_INPUT_ELEMENT_DESC> bakedLayout;
+	std::vector<D3D12_INPUT_ELEMENT_DESC> wireframeLayout;
 };
+

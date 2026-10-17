@@ -3,7 +3,7 @@
 #include <d3d12.h>
 #include <wrl.h>
 
-using namespace Microsoft::WRL;
+using Microsoft::WRL::ComPtr;
 
 struct Texture
 {
@@ -21,5 +21,6 @@ struct MyTexture {
 	D3D12_CPU_DESCRIPTOR_HANDLE srvHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE srvGpuHandle;
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle;
+	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle;
 };
 

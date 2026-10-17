@@ -29,7 +29,7 @@ void DX12App::UpdateCascades()
 	float lambda = 0.5f;
 
 
-	Vector3 lightDir = renderSystem->sceneLights_[0].lightDirection;
+	Vector3 lightDir = renderSystem->sceneLights[0].lightDirection;
 	lightDir.Normalize();
 	Vector3 up = (fabsf(lightDir.y) > 0.99f) ? Vector3::Right : Vector3::Up;
 

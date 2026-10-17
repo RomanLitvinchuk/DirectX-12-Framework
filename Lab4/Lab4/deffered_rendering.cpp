@@ -9,32 +9,32 @@ void DX12App::Draw()
 	frameIndex++;
 	WaitForCurrentFrameResource();
 	ThrowIfFailed(currentFrameResource->cmdListAlloc->Reset());
-	ThrowIfFailed(commandList->Reset(currentFrameResource->cmdListAlloc.Get(), renderSystem->opaquePSO_.Get()));
+	ThrowIfFailed(commandList->Reset(currentFrameResource->cmdListAlloc.Get(), renderSystem->opaquePSO.Get()));
 	SortLODs();
 	DrawShadows();
 	commandList->RSSetViewports(1, &viewport);
 	commandList->RSSetScissorRects(1, &scissorRect);
 
-	renderSystem->g_buffer->TransitToOpaqueRenderingState(commandList);
+	renderSystem->gBuffer->TransitToOpaqueRenderingState(commandList);
 
-	renderSystem->g_buffer->ClearGBuffer(commandList);
-	renderSystem->post_process->ClearPostProcess(commandList);
+	renderSystem->gBuffer->ClearGBuffer(commandList);
+	renderSystem->postProcess->ClearPostProcess(commandList);
 	renderSystem->ssao->ClearSSAO(commandList);
 	renderSystem->history->ClearLightTexture(commandList);
 
 
-	MyTexture* ppWriteTexture = &renderSystem->post_process->GetHdrTextureA();
-	MyTexture* ppReadTexture = &renderSystem->post_process->GetHdrTextureB();
+	MyTexture* ppWriteTexture = &renderSystem->postProcess->GetHdrTextureA();
+	MyTexture* ppReadTexture = &renderSystem->postProcess->GetHdrTextureB();
 
 	bIsTreeVisible = false;
 
 	if (bIsFirstFrame) {
 		DrawToStreamOutput();
-		ThrowIfFailed(commandList->Reset(currentFrameResource->cmdListAlloc.Get(), renderSystem->opaquePSO_.Get()));
+		ThrowIfFailed(commandList->Reset(currentFrameResource->cmdListAlloc.Get(), renderSystem->opaquePSO.Get()));
 		bIsFirstFrame = false;
 	}
 	DrawToGBuffer();
-	renderSystem->g_buffer->TransitToLightsRenderingState(commandList);
+	renderSystem->gBuffer->TransitToLightsRenderingState(commandList);
 	DrawLights();
 
 	//if (bIsTreeVisible) DrawNYBalls();
@@ -73,8 +73,8 @@ void DX12App::Draw()
 
 		d3dUtil::SwapTextures(commandList, ppWriteTexture, ppReadTexture);
 		DrawPPTonemap(ppReadTexture);
-		ppReadTexture = &renderSystem->post_process->GetLdrTextureB();
-		ppWriteTexture = &renderSystem->post_process->GetLdrTextureA();
+		ppReadTexture = &renderSystem->postProcess->GetLdrTextureB();
+		ppWriteTexture = &renderSystem->postProcess->GetLdrTextureA();
 		d3dUtil::SwapTextures(commandList, ppWriteTexture, ppReadTexture);
 
 		if (renderSystem->bVignette)
@@ -126,8 +126,8 @@ void DX12App::DrawShadows() {
 
 	if (totalInstances == 0) return;
 
-	commandList->SetPipelineState(renderSystem->shadowPSO_.Get());
-	commandList->SetGraphicsRootSignature(renderSystem->shadowRS_.Get());
+	commandList->SetPipelineState(renderSystem->shadowPSO.Get());
+	commandList->SetGraphicsRootSignature(renderSystem->shadowRS.Get());
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	commandList->IASetVertexBuffers(0, 1, &vertexBuffers[0]);
 	commandList->IASetIndexBuffer(&indexBufferView);
@@ -185,15 +185,15 @@ void DX12App::DrawToGBuffer() {
 	commandList->ClearDepthStencilView(GetDSV(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvs[] = {
-		renderSystem->g_buffer->GetDiffuseTex().rtvHandle, renderSystem->g_buffer->GetNormalTex().rtvHandle
+		renderSystem->gBuffer->GetDiffuseTex().rtvHandle, renderSystem->gBuffer->GetNormalTex().rtvHandle
 	};
-	D3D12_CPU_DESCRIPTOR_HANDLE dsv = renderSystem->g_buffer->GetDepthTex().dsvHandle;
+	D3D12_CPU_DESCRIPTOR_HANDLE dsv = renderSystem->gBuffer->GetDepthTex().dsvHandle;
 	commandList->OMSetRenderTargets(2, rtvs, true, &dsv);
 
 	ID3D12DescriptorHeap* descriptorHeaps[] = { cbvSrvHeap.Get(), samplerHeap.Get() };
 	commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
-	commandList->SetGraphicsRootSignature(renderSystem->opaqueRS_.Get());
+	commandList->SetGraphicsRootSignature(renderSystem->opaqueRS.Get());
 
 	CD3DX12_GPU_DESCRIPTOR_HANDLE samplerHandle(samplerHeap->GetGPUDescriptorHandleForHeapStart());
 
@@ -206,8 +206,8 @@ void DX12App::DrawToGBuffer() {
 	{
 		auto& sm = sceneData.submeshes[idx];
 
-		commandList->SetGraphicsRootSignature(renderSystem->opaqueRS_.Get());
-		commandList->SetPipelineState(renderSystem->opaquePSO_.Get());
+		commandList->SetGraphicsRootSignature(renderSystem->opaqueRS.Get());
+		commandList->SetPipelineState(renderSystem->opaquePSO.Get());
 		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 		commandList->SetGraphicsRootConstantBufferView(0, currentFrameResource->objectsUploadBuffer->Resource()->GetGPUVirtualAddress()); 
@@ -276,7 +276,7 @@ void DX12App::DrawLOD0ToGBuffer(UINT& currentInstanceOffset, Submesh& sm) {
 }
 
 void DX12App::DrawBakedMeshToGBuffer(UINT& currentInstanceOffset, Submesh& sm) {
-	commandList->SetPipelineState(renderSystem->bakedPSO_.Get());
+	commandList->SetPipelineState(renderSystem->bakedPSO.Get());
 	D3D12_VERTEX_BUFFER_VIEW bakedVbv;
 	bakedVbv.BufferLocation = streamOutputBuffer->GetGPUVirtualAddress();
 	bakedVbv.StrideInBytes = sizeof(BakedVertex);
@@ -311,8 +311,8 @@ void DX12App::DrawLOD1ToGBuffer(UINT& currentInstanceOffset, Submesh& sm) {
 
 void DX12App::DrawBillboardsToGBuffer(UINT& currentInstanceOffset, Submesh& sm) {
 	if (!sm.sorted_billboards.empty()) {
-		commandList->SetGraphicsRootSignature(renderSystem->billboardRS_.Get());
-		commandList->SetPipelineState(renderSystem->billboardPSO_.Get());
+		commandList->SetGraphicsRootSignature(renderSystem->billboardRS.Get());
+		commandList->SetPipelineState(renderSystem->billboardPSO.Get());
 		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 		for (size_t i = 0; i < sm.sorted_billboards.size(); i++) {
 			currentFrameResource->instanceBuffer->CopyData(currentInstanceOffset + i, sm.sorted_billboards[i]);
@@ -337,22 +337,22 @@ void DX12App::DrawBillboardsToGBuffer(UINT& currentInstanceOffset, Submesh& sm) 
 }
 
 void DX12App::DrawLights() {
-	commandList->SetPipelineState(renderSystem->lightPSO_.Get());
-	commandList->SetGraphicsRootSignature(renderSystem->lightRS_.Get());
+	commandList->SetPipelineState(renderSystem->lightPSO.Get());
+	commandList->SetGraphicsRootSignature(renderSystem->lightRS.Get());
 
-	for (int i = 0; i < renderSystem->sceneLights_.size(); ++i) {
-		currentFrameResource->lightBuffer->CopyData(i, renderSystem->sceneLights_[i]);
+	for (int i = 0; i < renderSystem->sceneLights.size(); ++i) {
+		currentFrameResource->lightBuffer->CopyData(i, renderSystem->sceneLights[i]);
 	}
 
 	D3D12_CPU_DESCRIPTOR_HANDLE rtv = renderSystem->history->GetLightTexture().rtvHandle;
 	commandList->OMSetRenderTargets(1, &rtv, true, nullptr);
-	ID3D12DescriptorHeap* descriptorHeaps[] = { renderSystem->g_buffer->GetSrvHeap().Get(), renderSystem->samplerHeap.Get()};
+	ID3D12DescriptorHeap* descriptorHeaps[] = { renderSystem->gBuffer->GetSrvHeap().Get(), renderSystem->samplerHeap.Get()};
 	commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
 	commandList->SetGraphicsRootConstantBufferView(0, currentFrameResource->cameraBuffer->Resource()->GetGPUVirtualAddress());
-	UINT count = (UINT)renderSystem->sceneLights_.size();
+	UINT count = (UINT)renderSystem->sceneLights.size();
 	commandList->SetGraphicsRoot32BitConstant(1, count, 0);
-	commandList->SetGraphicsRootDescriptorTable(2, renderSystem->g_buffer->GetSrvHeap()->GetGPUDescriptorHandleForHeapStart());
+	commandList->SetGraphicsRootDescriptorTable(2, renderSystem->gBuffer->GetSrvHeap()->GetGPUDescriptorHandleForHeapStart());
 	commandList->SetGraphicsRootDescriptorTable(3, renderSystem->samplerHeap->GetGPUDescriptorHandleForHeapStart());
 	commandList->SetGraphicsRootDescriptorTable(4, shadowMap->Srv());
 	commandList->SetGraphicsRootConstantBufferView(5, currentFrameResource->shadowBuffer->Resource()->GetGPUVirtualAddress());
@@ -367,10 +367,10 @@ void DX12App::DrawLights() {
 void DX12App::TAAResolve()
 {
 	renderSystem->history->LightBarrier(commandList);
-	commandList->SetPipelineState(renderSystem->TAAResolvePSO_.Get());
-	commandList->SetGraphicsRootSignature(renderSystem->TAAResolveRS_.Get());
+	commandList->SetPipelineState(renderSystem->TAAResolvePSO.Get());
+	commandList->SetGraphicsRootSignature(renderSystem->TAAResolveRS.Get());
 
-	auto rtv = renderSystem->post_process->GetHdrTextureA().rtvHandle;
+	auto rtv = renderSystem->postProcess->GetHdrTextureA().rtvHandle;
 	commandList->OMSetRenderTargets(1, &rtv, true, nullptr);
 
 	ID3D12DescriptorHeap* descriptorHeaps[] = {renderSystem->history->GetSrvHeap(), renderSystem->history->GetSamplerHeap()};
@@ -382,22 +382,22 @@ void DX12App::TAAResolve()
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	commandList->DrawInstanced(3, 1, 0, 0);
 
-	InitHistoryTextureFromCurrentFrame(renderSystem->post_process->GetHdrTextureA());
+	InitHistoryTextureFromCurrentFrame(renderSystem->postProcess->GetHdrTextureA());
 }
 
 
 void DX12App::DrawNYBalls()
 {
-	commandList->SetPipelineState(renderSystem->bulbPSO_.Get());
-	commandList->SetGraphicsRootSignature(renderSystem->bulbRS_.Get());
+	commandList->SetPipelineState(renderSystem->bulbPSO.Get());
+	commandList->SetGraphicsRootSignature(renderSystem->bulbRS.Get());
 
-	auto dsv = renderSystem->g_buffer->GetDepthTex().dsvHandle;
-	D3D12_CPU_DESCRIPTOR_HANDLE rtv = renderSystem->post_process->GetHdrTextureA().rtvHandle;
+	auto dsv = renderSystem->gBuffer->GetDepthTex().dsvHandle;
+	D3D12_CPU_DESCRIPTOR_HANDLE rtv = renderSystem->postProcess->GetHdrTextureA().rtvHandle;
 	commandList->OMSetRenderTargets(1, &rtv, true, &dsv);
 
 	commandList->SetGraphicsRootConstantBufferView(0, currentFrameResource->objectsUploadBuffer->Resource()->GetGPUVirtualAddress());
 
-	auto handle = renderSystem->g_buffer->GetSrvHeap()->GetGPUDescriptorHandleForHeapStart();
+	auto handle = renderSystem->gBuffer->GetSrvHeap()->GetGPUDescriptorHandleForHeapStart();
 	auto size = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	CD3DX12_GPU_DESCRIPTOR_HANDLE lightSrvHandle(handle, 3, size);
 	commandList->SetGraphicsRootDescriptorTable(1, lightSrvHandle);

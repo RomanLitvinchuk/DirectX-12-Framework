@@ -3,7 +3,6 @@
 #include <SimpleMath.h>
 #include <DirectXCollision.h>
 
-
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
 

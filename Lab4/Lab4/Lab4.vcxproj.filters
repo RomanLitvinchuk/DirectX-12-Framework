@@ -69,9 +69,6 @@
     <ClCompile Include="update.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="layouts.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
     <ClCompile Include="box.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
@@ -219,12 +216,6 @@
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
     <ClInclude Include="simulate_particles.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
-    <ClInclude Include="pbf_constants.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
-    <ClInclude Include="pbf_simulator.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
     <ClInclude Include="frame_resource.h">

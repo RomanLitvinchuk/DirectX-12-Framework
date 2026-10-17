@@ -125,13 +125,13 @@ void DX12App::UpdateTreesLights() {
 	if (timeAccumulator >= 1.0f) {
 		timeAccumulator = 0.0f;
 
-		for (int i = 0; i < renderSystem->sceneLights_.size(); i++) {
-			if (renderSystem->sceneLights_[i].lightType == 1) {
-				renderSystem->sceneLights_[i].lightColor.x = static_cast<float>(rand()) / RAND_MAX;
-				renderSystem->sceneLights_[i].lightColor.y = static_cast<float>(rand()) / RAND_MAX;
-				renderSystem->sceneLights_[i].lightColor.z = static_cast<float>(rand()) / RAND_MAX;
+		for (int i = 0; i < renderSystem->sceneLights.size(); i++) {
+			if (renderSystem->sceneLights[i].lightType == 1) {
+				renderSystem->sceneLights[i].lightColor.x = static_cast<float>(rand()) / RAND_MAX;
+				renderSystem->sceneLights[i].lightColor.y = static_cast<float>(rand()) / RAND_MAX;
+				renderSystem->sceneLights[i].lightColor.z = static_cast<float>(rand()) / RAND_MAX;
 			}
-			currentFrameResource->lightBuffer->CopyData(i, renderSystem->sceneLights_[i]);
+			currentFrameResource->lightBuffer->CopyData(i, renderSystem->sceneLights[i]);
 		}
 	}
 }

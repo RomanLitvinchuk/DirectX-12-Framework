@@ -3,7 +3,7 @@
 #include "wrl.h"
 #include "throw_if_failed.h"
 
-using namespace Microsoft::WRL;
+using Microsoft::WRL::ComPtr;
 
 class SingletonDevice {
 private:

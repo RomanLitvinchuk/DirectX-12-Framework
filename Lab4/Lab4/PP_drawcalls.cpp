@@ -2,13 +2,13 @@
 #include "DirectXColors.h"
 
 void DX12App::DrawPPTonemap(MyTexture* readHDR) {
-	commandList->SetPipelineState(renderSystem->pp_tonemappingPSO_.Get());
-	commandList->SetGraphicsRootSignature(renderSystem->pp_defaultRS_.Get());
+	commandList->SetPipelineState(renderSystem->ppTonemappingPSO.Get());
+	commandList->SetGraphicsRootSignature(renderSystem->ppDefaultRS.Get());
 
-	D3D12_CPU_DESCRIPTOR_HANDLE rtv = renderSystem->post_process->GetLdrTextureA().rtvHandle;
+	D3D12_CPU_DESCRIPTOR_HANDLE rtv = renderSystem->postProcess->GetLdrTextureA().rtvHandle;
 	commandList->OMSetRenderTargets(1, &rtv, true, nullptr);
 
-	ID3D12DescriptorHeap* descriptorHeaps[] = { renderSystem->post_process->GetSrvHeap().Get(), renderSystem->samplerHeap.Get()};
+	ID3D12DescriptorHeap* descriptorHeaps[] = { renderSystem->postProcess->GetSrvHeap().Get(), renderSystem->samplerHeap.Get()};
 	commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 	
 
@@ -21,13 +21,13 @@ void DX12App::DrawPPTonemap(MyTexture* readHDR) {
 
 void DX12App::DrawPPVignette(MyTexture* readLDR, MyTexture* writeLDR)
 {
-	commandList->SetPipelineState(renderSystem->pp_vignettePSO_.Get());
-	commandList->SetGraphicsRootSignature(renderSystem->pp_defaultRS_.Get());
+	commandList->SetPipelineState(renderSystem->ppVignettePSO.Get());
+	commandList->SetGraphicsRootSignature(renderSystem->ppDefaultRS.Get());
 
 	D3D12_CPU_DESCRIPTOR_HANDLE rtv = writeLDR->rtvHandle;
 	commandList->OMSetRenderTargets(1, &rtv, true, nullptr);
 
-	ID3D12DescriptorHeap* descriptorHeaps[] = { renderSystem->post_process->GetSrvHeap().Get(), renderSystem->samplerHeap.Get()};
+	ID3D12DescriptorHeap* descriptorHeaps[] = { renderSystem->postProcess->GetSrvHeap().Get(), renderSystem->samplerHeap.Get()};
 	commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
 	commandList->SetGraphicsRootDescriptorTable(0, readLDR->srvGpuHandle);
@@ -39,12 +39,12 @@ void DX12App::DrawPPVignette(MyTexture* readLDR, MyTexture* writeLDR)
 
 void DX12App::DrawPPOutput(MyTexture* readLDR)
 {
-	commandList->SetPipelineState(renderSystem->pp_outputPSO_.Get());
-	commandList->SetGraphicsRootSignature(renderSystem->pp_defaultRS_.Get());
+	commandList->SetPipelineState(renderSystem->ppOutputPSO.Get());
+	commandList->SetGraphicsRootSignature(renderSystem->ppDefaultRS.Get());
 	commandList->ClearRenderTargetView(GetBackBuffer(), Colors::Black, 0, nullptr);
 	D3D12_CPU_DESCRIPTOR_HANDLE bb = GetBackBuffer();
 	commandList->OMSetRenderTargets(1, &bb, true, nullptr);
-	ID3D12DescriptorHeap* descriptorHeaps[] = { renderSystem->post_process->GetSrvHeap().Get(), renderSystem->samplerHeap.Get()};
+	ID3D12DescriptorHeap* descriptorHeaps[] = { renderSystem->postProcess->GetSrvHeap().Get(), renderSystem->samplerHeap.Get()};
 	commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
 

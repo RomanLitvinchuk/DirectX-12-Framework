@@ -23,87 +23,44 @@
 #include "frame_resource.h"
 
 
-using namespace Microsoft::WRL;
+using Microsoft::WRL::ComPtr;
 using namespace DirectX;
 
 class DX12App
 {
 public:
 	void Init(HWND hWnd);
-	void InitializeDevice();
-	void CreateCommandQueue();
-	void CreateCommandList();
-	void CreateSwapChain(HWND hWnd);
-	void CreateRTVAndDSVDescriptorHeaps();
-	void CreateCBVDescriptorHeap();
+	void OnResize();
+	void CalculateGameStats(HWND hWnd);
+	void Draw();
+	void OnMouseDown(HWND hWnd);
+	void OnMouseUp();
+	void Update();
+	void NewImGuiFrame();
+	void BuildImGui();
+	void ShutdownImGui();
+
+	Camera& GetCamera()
+	{ 
+		return camera; 
+	}
+
+	GameTimer& GetTimer() 
+	{ 
+		return gt; 
+	}
+
+	bool IsDeviceCreated() 
+	{ 
+		return device != nullptr; 
+	}
+
 	D3D12_CPU_DESCRIPTOR_HANDLE GetBackBuffer() const;
 	ID3D12Resource* CurrentBackBuffer() const;
 	D3D12_CPU_DESCRIPTOR_HANDLE GetDSV() const;
-	void CreateRTV();
-	void CreateDSV();
-	void LoadTextures();
-	void CreateSRV();
-	void CreateSamplerHeap();
 
-	void OnResize();
-	void SetViewport();
-	void SetScissor();
-
-	void CalculateGameStats(HWND hWnd);
-
-
-	void Draw();
-	void EmitParticles();
-	void InitEmitter();
-
-	void DrawPPTonemap(MyTexture* readHDR);
-	void DrawPPVignette(MyTexture* readLDR, MyTexture* writeLDR);
-	void DrawPPOutput(MyTexture* readLDR);
-
-	void FlushCommandQueue();
-
-	void InitProjectionMatrix();
-	void CreateVertexBuffer();
-	void CreateIndexBuffer();
-
-	void OnMouseDown(HWND hWnd);
-	void OnMouseUp();
-
-	void Update();
-
-	void InitUploadBuffers();
-	void FillUploadBuffers();
-
-	void InitFrameResources();
-	void FillFrameResources();
-	void WaitForCurrentFrameResource();
-
-	void InitUAVBuffers();
-	void CreateConstantBufferView();
-	void CreateStructuredBuffersSRV();
-
-	void CompileShaders();
-
-	void CreateSOBuffers();
-
-	void BuildBulbGeometry();
-	void BuildBoxGeometry();
-	void InitRenderSystem();
-
-	void InitShadowMap();
-	std::vector<Vector3> GetFrustumCornersWorldSpace(Matrix invViewProj);
-	void UpdateCascades();
-
-	void Parsing();
-	void BuildOctree();
-
-	ComPtr<ID3D12Device> GetDevice() const { return device; }
-	Camera& GetCamera() { return camera; }
-	GameTimer& GetTimer() { return gt; }
-	bool IsDeviceCreated() { return device != nullptr; }
-	ComPtr<ID3D12GraphicsCommandList> GetCommandList() const { return commandList; }
-
-	void SetClientWH(int newWidth, int newHeight) {
+	void SetClientWH(int newWidth, int newHeight) 
+	{
 		clientWidth = newWidth;
 		clientHeight = newHeight;
 	}
@@ -113,12 +70,6 @@ public:
 	int GetClientWidth() { return clientWidth; }
 	int GetClientHeight() { return clientHeight; }
 
-	void InitImGui(HWND hwnd);
-	void ShutdownImGui();
-	void NewImGuiFrame();
-	void BuildImGui();
-	void RenderImGui();
-	void CreateImGuiDescriptorHeap();
 
 private:
 	void EnableDebug();
@@ -139,6 +90,11 @@ private:
 	void DrawWireframe();
 	void DrawParticles();
 	void ComputeParticles();
+	void EmitParticles();
+	void InitEmitter();
+	void DrawPPTonemap(MyTexture* readHDR);
+	void DrawPPVignette(MyTexture* readLDR, MyTexture* writeLDR);
+	void DrawPPOutput(MyTexture* readLDR);
 
 	void UpdateParticleData();
 	void UpdateMatricesData();
@@ -152,7 +108,52 @@ private:
 	void UpdateViewportConstants();
 	float Halton(uint32_t index, uint32_t base);
 
+	void InitializeDevice();
+	void CreateCommandQueue();
+	void CreateCommandList();
+	void CreateSwapChain(HWND hWnd);
+	void CreateRTVAndDSVDescriptorHeaps();
+	void CreateCBVDescriptorHeap();
+	void CreateRTV();
+	void CreateDSV();
+	void LoadTextures();
+	void CreateSRV();
+	void CreateSamplerHeap();
+	void CreateSOBuffers();
+	void InitUAVBuffers();
+	void CreateConstantBufferView();
+	void CreateStructuredBuffersSRV();
+	void SetViewport();
+	void SetScissor();
+	void InitProjectionMatrix();
+	void CreateVertexBuffer();
+	void CreateIndexBuffer();
+
+	void InitFrameResources();
+	void FillFrameResources();
+	void WaitForCurrentFrameResource();
+	void InitUploadBuffers();
+	void FillUploadBuffers();
+
+	void BuildBulbGeometry();
+	void BuildBoxGeometry();
+	void InitShadowMap();
+	void InitRenderSystem();
+
+	void Parsing();
+	void BuildOctree();
+	std::vector<Vector3> GetFrustumCornersWorldSpace(Matrix invViewProj);
+	void UpdateCascades();
+
+
+
 	void InitHistoryTextureFromCurrentFrame(MyTexture& copyTexture);
+
+	void InitImGui(HWND hwnd);
+	void RenderImGui();
+	void CreateImGuiDescriptorHeap();
+
+	void FlushCommandQueue();
 
 
 

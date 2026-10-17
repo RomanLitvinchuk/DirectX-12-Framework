@@ -2,13 +2,102 @@
 #include "throw_if_failed.h"
 #include "d3dUtil.h"
 #include "vertex.h"
-#include "d3dx12.h"
 #include <random>
 #include "g_buffer.h"
 #include "post_process.h"
 #include "ssao.h"
 #include "singletone_device.h"
 #include "history.h"
+
+void RenderingSystem::CompileShaders() {
+
+	opaqueVS = d3dUtil::CompileShader(L"shaders/gbuffer.hlsl", nullptr, "VS", "vs_5_0");
+	opaquePS = d3dUtil::CompileShader(L"shaders/gbuffer.hlsl", nullptr, "PS", "ps_5_0");
+
+
+	fullscreenTriangleVS = d3dUtil::CompileShader(L"shaders/light.hlsl", nullptr, "VS_FullScreenTriangle", "vs_5_0");
+	lightPS = d3dUtil::CompileShader(L"shaders/light.hlsl", nullptr, "PS_DeferredLighting", "ps_5_0");
+
+
+	bulbVS = d3dUtil::CompileShader(L"shaders/bulb.hlsl", nullptr, "VS", "vs_5_0");
+	bulbPS = d3dUtil::CompileShader(L"shaders/bulb.hlsl", nullptr, "PS", "ps_5_0");
+
+
+	HullShader = d3dUtil::CompileShader(L"shaders/HullShader.hlsl", nullptr, "main", "hs_5_0");
+
+
+	DomainShader = d3dUtil::CompileShader(L"shaders/DomainShader.hlsl", nullptr, "DS", "ds_5_0");
+
+	tessVS = d3dUtil::CompileShader(L"shaders/tess.hlsl", nullptr, "TessVS", "vs_5_0");
+
+	bakedVS = d3dUtil::CompileShader(L"shaders/baked.hlsl", nullptr, "BakedVS", "vs_5_0");
+
+	wireframeVS = d3dUtil::CompileShader(L"shaders/wireframe.hlsl", nullptr, "VS", "vs_5_0");
+	wireframePS = d3dUtil::CompileShader(L"shaders/wireframe.hlsl", nullptr, "PS", "ps_5_0");
+
+	particleVS = d3dUtil::CompileShader(L"shaders/particles.hlsl", nullptr, "VS", "vs_5_0");
+	particleGS = d3dUtil::CompileShader(L"shaders/particleGS.hlsl", nullptr, "GS", "gs_5_0");
+	particlePS = d3dUtil::CompileShader(L"shaders/particles.hlsl", nullptr, "PS", "ps_5_0");
+	particleUpdateCS = d3dUtil::CompileShader(L"shaders/particleUpdateCS.hlsl", nullptr, "UpdateCS", "cs_5_0");
+	particleEmitCS = d3dUtil::CompileShader(L"shaders/particleEmitCS.hlsl", nullptr, "EmitCS", "cs_5_0");
+
+	shadowVS = d3dUtil::CompileShader(L"shaders/shadowVS.hlsl", nullptr, "VS", "vs_5_0");
+
+	SsaoPS = d3dUtil::CompileShader(L"shaders/ssao.hlsl", nullptr, "PS", "ps_5_0");
+	SsaoBlurPS = d3dUtil::CompileShader(L"shaders/ssaoBlur.hlsl", nullptr, "PS", "ps_5_0");
+
+	billboardVS = d3dUtil::CompileShader(L"shaders/billboard.hlsl", nullptr, "VS", "vs_5_0");
+	billboardPS = d3dUtil::CompileShader(L"shaders/billboard.hlsl", nullptr, "PS", "ps_5_0");
+
+	TAAResolvePS = d3dUtil::CompileShader(L"shaders/TAAResolve.hlsl", nullptr, "PS", "ps_5_0");
+
+	ppTonemappingPS = d3dUtil::CompileShader(L"shaders/PPTonemapping.hlsl", nullptr, "PS", "ps_5_0");
+	ppVignettePS = d3dUtil::CompileShader(L"shaders/PPVignette.hlsl", nullptr, "PS", "ps_5_0");
+	ppOutputRS = d3dUtil::CompileShader(L"shaders/PPOutput.hlsl", nullptr, "PS", "ps_5_0");
+}
+
+void RenderingSystem::BuildLayouts()
+{
+	inputLayout =
+	{
+		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+		{"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+		{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+		{"TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+		{"BITANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 44, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
+	};
+
+	bakedLayout = {
+		{ "WORLDPOS", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,  D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "NORMAL",   1, DXGI_FORMAT_R32G32B32_FLOAT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, 36, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "TANGENT",  0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 44, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+	};
+
+	wireframeLayout = {
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+	};
+}
+
+ComPtr<ID3D12RootSignature> RenderingSystem::CreateRootSignature(const CD3DX12_ROOT_SIGNATURE_DESC& rootDesc)
+{
+	ComPtr<ID3DBlob> serializedBlob;
+	ComPtr<ID3DBlob> errorBlob;
+
+	HRESULT hr = D3D12SerializeRootSignature(&rootDesc, D3D_ROOT_SIGNATURE_VERSION_1, serializedBlob.GetAddressOf(), errorBlob.GetAddressOf());
+
+	if (errorBlob)
+	{
+		OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+	}
+
+	ThrowIfFailed(hr);
+
+	ComPtr<ID3D12RootSignature> rootSignature;
+	ThrowIfFailed(device->CreateRootSignature(0, serializedBlob->GetBufferPointer(), serializedBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
+	return rootSignature;
+}
 
 void RenderingSystem::CreateOpaqueRS() {
 	CD3DX12_ROOT_PARAMETER slotRootParameter[9];
@@ -36,83 +125,17 @@ void RenderingSystem::CreateOpaqueRS() {
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT
 	);
 
-	ComPtr<ID3DBlob> serializedRootSig = nullptr;
-	ComPtr<ID3DBlob> errorBlob = nullptr;
-
-	HRESULT hr = D3D12SerializeRootSignature(
-		&rootSigDesc,
-		D3D_ROOT_SIGNATURE_VERSION_1,
-		serializedRootSig.GetAddressOf(),
-		errorBlob.GetAddressOf()
-	);
-
-	if (errorBlob != nullptr) {
-		OutputDebugStringA((char*)errorBlob->GetBufferPointer());
-	}
-
-	ThrowIfFailed(hr);
-	ThrowIfFailed(device->CreateRootSignature(
-		0,
-		serializedRootSig->GetBufferPointer(),
-		serializedRootSig->GetBufferSize(),
-		IID_PPV_ARGS(&opaqueRS_)
-	));
+	opaqueRS = CreateRootSignature(rootSigDesc);
 }
 
-void RenderingSystem::CompileShaders() {
-
-	opaqueVS_ = d3dUtil::CompileShader(L"shaders/gbuffer.hlsl", nullptr, "VS", "vs_5_0");
-	opaquePS_ = d3dUtil::CompileShader(L"shaders/gbuffer.hlsl", nullptr, "PS", "ps_5_0");
-
-
-	fullscreenTriangleVS_ = d3dUtil::CompileShader(L"shaders/light.hlsl", nullptr, "VS_FullScreenTriangle", "vs_5_0");
-	lightPS_ = d3dUtil::CompileShader(L"shaders/light.hlsl", nullptr, "PS_DeferredLighting", "ps_5_0");
-
-
-	bulbVS_ = d3dUtil::CompileShader(L"shaders/bulb.hlsl", nullptr, "VS", "vs_5_0");
-	bulbPS_ = d3dUtil::CompileShader(L"shaders/bulb.hlsl", nullptr, "PS", "ps_5_0");
-
-
-	HS_ = d3dUtil::CompileShader(L"shaders/HullShader.hlsl", nullptr, "main", "hs_5_0");
-
-
-	DS_ = d3dUtil::CompileShader(L"shaders/DomainShader.hlsl", nullptr, "DS", "ds_5_0");
-
-	tessVS_ = d3dUtil::CompileShader(L"shaders/tess.hlsl", nullptr, "TessVS", "vs_5_0");
-
-	bakedVS_ = d3dUtil::CompileShader(L"shaders/baked.hlsl", nullptr, "BakedVS", "vs_5_0");
-
-	wireframeVS_ = d3dUtil::CompileShader(L"shaders/wireframe.hlsl", nullptr, "VS", "vs_5_0");
-	wireframePS_ = d3dUtil::CompileShader(L"shaders/wireframe.hlsl", nullptr, "PS", "ps_5_0");
-
-	particleVS_ = d3dUtil::CompileShader(L"shaders/particles.hlsl", nullptr, "VS", "vs_5_0");
-	particleGS_ = d3dUtil::CompileShader(L"shaders/particleGS.hlsl", nullptr, "GS", "gs_5_0");
-	particlePS_ = d3dUtil::CompileShader(L"shaders/particles.hlsl", nullptr, "PS", "ps_5_0");
-	particleUpdateCS_ = d3dUtil::CompileShader(L"shaders/particleUpdateCS.hlsl", nullptr, "UpdateCS", "cs_5_0");
-	particleEmitCS_ = d3dUtil::CompileShader(L"shaders/particleEmitCS.hlsl", nullptr, "EmitCS", "cs_5_0");
-
-	shadowVS_ = d3dUtil::CompileShader(L"shaders/shadowVS.hlsl", nullptr, "VS", "vs_5_0");
-
-	SsaoPS_ = d3dUtil::CompileShader(L"shaders/ssao.hlsl", nullptr, "PS", "ps_5_0");
-	SsaoBlurPS_ = d3dUtil::CompileShader(L"shaders/ssaoBlur.hlsl", nullptr, "PS", "ps_5_0");
-
-	billboardVS_ = d3dUtil::CompileShader(L"shaders/billboard.hlsl", nullptr, "VS", "vs_5_0");
-	billboardPS_ = d3dUtil::CompileShader(L"shaders/billboard.hlsl", nullptr, "PS", "ps_5_0");
-
-	TAAResolvePS_ = d3dUtil::CompileShader(L"shaders/TAAResolve.hlsl", nullptr, "PS", "ps_5_0");
-
-	pp_tonemappingPS_ = d3dUtil::CompileShader(L"shaders/PPTonemapping.hlsl", nullptr, "PS", "ps_5_0");
-	pp_vignettePS_ = d3dUtil::CompileShader(L"shaders/PPVignette.hlsl", nullptr, "PS", "ps_5_0");
-	pp_outputPS_ = d3dUtil::CompileShader(L"shaders/PPOutput.hlsl", nullptr, "PS", "ps_5_0");
-}
 
 void RenderingSystem::CreateOpaquePSO(std::vector<D3D12_INPUT_ELEMENT_DESC>& layout) {
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;
 	ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
 	psoDesc.InputLayout = { layout.data(), (UINT)layout.size() };
-	psoDesc.pRootSignature = opaqueRS_.Get();
-	psoDesc.VS = { reinterpret_cast<BYTE*>(opaqueVS_->GetBufferPointer()), opaqueVS_->GetBufferSize() };
-	psoDesc.PS = { reinterpret_cast<BYTE*>(opaquePS_->GetBufferPointer()), opaquePS_->GetBufferSize() };
+	psoDesc.pRootSignature = opaqueRS.Get();
+	psoDesc.VS = { reinterpret_cast<BYTE*>(opaqueVS->GetBufferPointer()), opaqueVS->GetBufferSize() };
+	psoDesc.PS = { reinterpret_cast<BYTE*>(opaquePS->GetBufferPointer()), opaquePS->GetBufferSize() };
 	CD3DX12_RASTERIZER_DESC rastDesc(D3D12_DEFAULT);
 	//rastDesc.CullMode = D3D12_CULL_MODE_NONE;
 	rastDesc.FrontCounterClockwise = true;
@@ -127,7 +150,7 @@ void RenderingSystem::CreateOpaquePSO(std::vector<D3D12_INPUT_ELEMENT_DESC>& lay
 	psoDesc.SampleDesc.Count = 1;
 	psoDesc.SampleDesc.Quality = 0;
 	psoDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	ThrowIfFailed(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&opaquePSO_)));
+	ThrowIfFailed(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&opaquePSO)));
 }
 
 void RenderingSystem::CreateLightRS() {
@@ -154,16 +177,7 @@ void RenderingSystem::CreateLightRS() {
 
 	CD3DX12_ROOT_SIGNATURE_DESC rootSignDesc(_countof(rootParameter), rootParameter, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
-	ComPtr<ID3DBlob> serializedRootSig = nullptr;
-	ComPtr<ID3DBlob> errorBlob = nullptr;
-
-	HRESULT hr = D3D12SerializeRootSignature(&rootSignDesc, D3D_ROOT_SIGNATURE_VERSION_1, serializedRootSig.GetAddressOf(), errorBlob.GetAddressOf());
-
-	if (errorBlob != nullptr) {
-		OutputDebugStringA((char*)errorBlob->GetBufferPointer());
-	}
-	ThrowIfFailed(hr);
-	ThrowIfFailed(device->CreateRootSignature(0, serializedRootSig->GetBufferPointer(), serializedRootSig->GetBufferSize(), IID_PPV_ARGS(&lightRS_)));
+	lightRS = CreateRootSignature(rootSignDesc);
 }
 
 void RenderingSystem::CreateLightPSO() {
@@ -189,9 +203,9 @@ void RenderingSystem::CreateLightPSO() {
 	ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
 	psoDesc.InputLayout = { nullptr, 0 };
 	psoDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
-	psoDesc.pRootSignature = lightRS_.Get();
-	psoDesc.VS = { reinterpret_cast<BYTE*>(fullscreenTriangleVS_->GetBufferPointer()), fullscreenTriangleVS_->GetBufferSize() };
-	psoDesc.PS = { reinterpret_cast<BYTE*>(lightPS_->GetBufferPointer()), lightPS_->GetBufferSize() };
+	psoDesc.pRootSignature = lightRS.Get();
+	psoDesc.VS = { reinterpret_cast<BYTE*>(fullscreenTriangleVS->GetBufferPointer()), fullscreenTriangleVS->GetBufferSize() };
+	psoDesc.PS = { reinterpret_cast<BYTE*>(lightPS->GetBufferPointer()), lightPS->GetBufferSize() };
 	CD3DX12_RASTERIZER_DESC rastDesc(D3D12_DEFAULT);
 	psoDesc.RasterizerState = rastDesc;
 	psoDesc.BlendState = blendDesc;
@@ -207,7 +221,7 @@ void RenderingSystem::CreateLightPSO() {
 	psoDesc.SampleDesc.Count = 1;
 	psoDesc.SampleDesc.Quality = 0;
 	psoDesc.DSVFormat = DXGI_FORMAT_UNKNOWN;
-	ThrowIfFailed(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&lightPSO_)));
+	ThrowIfFailed(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&lightPSO)));
 
 }
 
@@ -250,25 +264,16 @@ void RenderingSystem::CreateBulbRS() {
 
 	CD3DX12_ROOT_SIGNATURE_DESC rootSignDesc(_countof(rootParameter), rootParameter, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
-	ComPtr<ID3DBlob> serializedRootSig = nullptr;
-	ComPtr<ID3DBlob> errorBlob = nullptr;
-
-	HRESULT hr = D3D12SerializeRootSignature(&rootSignDesc, D3D_ROOT_SIGNATURE_VERSION_1, serializedRootSig.GetAddressOf(), errorBlob.GetAddressOf());
-
-	if (errorBlob != nullptr) {
-		OutputDebugStringA((char*)errorBlob->GetBufferPointer());
-	}
-	ThrowIfFailed(hr);
-	ThrowIfFailed(device->CreateRootSignature(0, serializedRootSig->GetBufferPointer(), serializedRootSig->GetBufferSize(), IID_PPV_ARGS(&bulbRS_)));
+	bulbRS = CreateRootSignature(rootSignDesc);
 }
 
 void RenderingSystem::CreateBulbPSO(std::vector<D3D12_INPUT_ELEMENT_DESC>& layout) {
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
 	psoDesc.InputLayout = { layout.data(), (UINT)layout.size() };
-	psoDesc.pRootSignature = bulbRS_.Get(); 
+	psoDesc.pRootSignature = bulbRS.Get(); 
 
-	psoDesc.VS = { reinterpret_cast<BYTE*>(bulbVS_->GetBufferPointer()), bulbVS_->GetBufferSize() };
-	psoDesc.PS = { reinterpret_cast<BYTE*>(bulbPS_->GetBufferPointer()), bulbPS_->GetBufferSize() };
+	psoDesc.VS = { reinterpret_cast<BYTE*>(bulbVS->GetBufferPointer()), bulbVS->GetBufferSize() };
+	psoDesc.PS = { reinterpret_cast<BYTE*>(bulbPS->GetBufferPointer()), bulbPS->GetBufferSize() };
 
 	psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 	psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
@@ -285,7 +290,7 @@ void RenderingSystem::CreateBulbPSO(std::vector<D3D12_INPUT_ELEMENT_DESC>& layou
 	psoDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	psoDesc.SampleDesc.Count = 1;
 
-	ThrowIfFailed(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&bulbPSO_)));
+	ThrowIfFailed(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&bulbPSO)));
 }
 
 void RenderingSystem::CreateStreamOutputRS()
@@ -310,33 +315,10 @@ void RenderingSystem::CreateStreamOutputRS()
 	slotRootParameter[6].InitAsConstantBufferView(2);
 	slotRootParameter[7].InitAsShaderResourceView(3);
 
-	CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(
-		_countof(slotRootParameter), slotRootParameter,
-		0, nullptr,
-		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_STREAM_OUTPUT | D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT
-	);
+	CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(_countof(slotRootParameter), slotRootParameter, 0, nullptr, 
+	D3D12_ROOT_SIGNATURE_FLAG_ALLOW_STREAM_OUTPUT | D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
-	ComPtr<ID3DBlob> serializedRootSig = nullptr;
-	ComPtr<ID3DBlob> errorBlob = nullptr;
-
-	HRESULT hr = D3D12SerializeRootSignature(
-		&rootSigDesc,
-		D3D_ROOT_SIGNATURE_VERSION_1,
-		serializedRootSig.GetAddressOf(),
-		errorBlob.GetAddressOf()
-	);
-
-	if (errorBlob != nullptr) {
-		OutputDebugStringA((char*)errorBlob->GetBufferPointer());
-	}
-
-	ThrowIfFailed(hr);
-	ThrowIfFailed(device->CreateRootSignature(
-		0,
-		serializedRootSig->GetBufferPointer(),
-		serializedRootSig->GetBufferSize(),
-		IID_PPV_ARGS(&streamOutputRS_)
-	));
+	streamOutputRS = CreateRootSignature(rootSigDesc);
 }
 
 void RenderingSystem::CreateStreamOutputPSO(std::vector<D3D12_INPUT_ELEMENT_DESC>& layout)
@@ -362,11 +344,11 @@ void RenderingSystem::CreateStreamOutputPSO(std::vector<D3D12_INPUT_ELEMENT_DESC
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC streamOutputPSODesc;
 	ZeroMemory(&streamOutputPSODesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
 	streamOutputPSODesc.InputLayout = { layout.data(), (UINT)layout.size() };
-	streamOutputPSODesc.pRootSignature = streamOutputRS_.Get();
+	streamOutputPSODesc.pRootSignature = streamOutputRS.Get();
 	streamOutputPSODesc.StreamOutput = soDesc;
-	streamOutputPSODesc.VS = { reinterpret_cast<BYTE*>(tessVS_->GetBufferPointer()), tessVS_->GetBufferSize() };
-	streamOutputPSODesc.HS = { reinterpret_cast<BYTE*>(HS_->GetBufferPointer()), HS_->GetBufferSize() };
-	streamOutputPSODesc.DS = { reinterpret_cast<BYTE*>(DS_->GetBufferPointer()), DS_->GetBufferSize() };
+	streamOutputPSODesc.VS = { reinterpret_cast<BYTE*>(tessVS->GetBufferPointer()), tessVS->GetBufferSize() };
+	streamOutputPSODesc.HS = { reinterpret_cast<BYTE*>(HullShader->GetBufferPointer()), HullShader->GetBufferSize() };
+	streamOutputPSODesc.DS = { reinterpret_cast<BYTE*>(DomainShader->GetBufferPointer()), DomainShader->GetBufferSize() };
 	streamOutputPSODesc.PS = { nullptr, 0};
 	CD3DX12_RASTERIZER_DESC rastDesc(D3D12_DEFAULT);
 	rastDesc.FrontCounterClockwise = true;
@@ -384,7 +366,7 @@ void RenderingSystem::CreateStreamOutputPSO(std::vector<D3D12_INPUT_ELEMENT_DESC
 	streamOutputPSODesc.SampleDesc.Count = 1;
 	streamOutputPSODesc.SampleDesc.Quality = 0;
 	streamOutputPSODesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	ThrowIfFailed(device->CreateGraphicsPipelineState(&streamOutputPSODesc, IID_PPV_ARGS(&streamOutputPSO_)));
+	ThrowIfFailed(device->CreateGraphicsPipelineState(&streamOutputPSODesc, IID_PPV_ARGS(&streamOutputPSO)));
 }
 
 void RenderingSystem::CreateBakedPSO(std::vector<D3D12_INPUT_ELEMENT_DESC>& layout)
@@ -392,9 +374,9 @@ void RenderingSystem::CreateBakedPSO(std::vector<D3D12_INPUT_ELEMENT_DESC>& layo
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;
 	ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
 	psoDesc.InputLayout = { layout.data(), (UINT)layout.size() };
-	psoDesc.pRootSignature = opaqueRS_.Get();
-	psoDesc.VS = { reinterpret_cast<BYTE*>(bakedVS_->GetBufferPointer()), bakedVS_->GetBufferSize() };
-	psoDesc.PS = { reinterpret_cast<BYTE*>(opaquePS_->GetBufferPointer()), opaquePS_->GetBufferSize() };
+	psoDesc.pRootSignature = opaqueRS.Get();
+	psoDesc.VS = { reinterpret_cast<BYTE*>(bakedVS->GetBufferPointer()), bakedVS->GetBufferSize() };
+	psoDesc.PS = { reinterpret_cast<BYTE*>(opaquePS->GetBufferPointer()), opaquePS->GetBufferSize() };
 	CD3DX12_RASTERIZER_DESC rastDesc(D3D12_DEFAULT);
 	//rastDesc.CullMode = D3D12_CULL_MODE_NONE;
 	rastDesc.FrontCounterClockwise = true;
@@ -409,7 +391,7 @@ void RenderingSystem::CreateBakedPSO(std::vector<D3D12_INPUT_ELEMENT_DESC>& layo
 	psoDesc.SampleDesc.Count = 1;
 	psoDesc.SampleDesc.Quality = 0;
 	psoDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	ThrowIfFailed(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&bakedPSO_)));
+	ThrowIfFailed(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&bakedPSO)));
 }
 
 void RenderingSystem::CreateWireframeRS()
@@ -420,16 +402,7 @@ void RenderingSystem::CreateWireframeRS()
 
 	CD3DX12_ROOT_SIGNATURE_DESC rootDesc(_countof(slotRootParameter), slotRootParameter, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
-	ComPtr<ID3DBlob> errorBlob;
-	ComPtr<ID3DBlob> serializedRootDesc;
-
-	ThrowIfFailed(D3D12SerializeRootSignature(&rootDesc, D3D_ROOT_SIGNATURE_VERSION_1, serializedRootDesc.GetAddressOf(), errorBlob.GetAddressOf()));
-
-	if (errorBlob != nullptr) {
-		OutputDebugStringA((char*)errorBlob->GetBufferPointer());
-	}
-	
-	ThrowIfFailed(device->CreateRootSignature(0, serializedRootDesc->GetBufferPointer(), serializedRootDesc->GetBufferSize(), IID_PPV_ARGS(&wireframeRS_)));
+	wireframeRS = CreateRootSignature(rootDesc);
 }
 
 void RenderingSystem::CreateWireframePSO(std::vector<D3D12_INPUT_ELEMENT_DESC>& layout)
@@ -437,9 +410,9 @@ void RenderingSystem::CreateWireframePSO(std::vector<D3D12_INPUT_ELEMENT_DESC>& 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;
 	ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
 	psoDesc.InputLayout = { layout.data(), (UINT)layout.size() };
-	psoDesc.pRootSignature = wireframeRS_.Get();
-	psoDesc.VS = { reinterpret_cast<BYTE*>(wireframeVS_->GetBufferPointer()), wireframeVS_->GetBufferSize() };
-	psoDesc.PS = { reinterpret_cast<BYTE*>(wireframePS_->GetBufferPointer()), wireframePS_->GetBufferSize() };
+	psoDesc.pRootSignature = wireframeRS.Get();
+	psoDesc.VS = { reinterpret_cast<BYTE*>(wireframeVS->GetBufferPointer()), wireframeVS->GetBufferSize() };
+	psoDesc.PS = { reinterpret_cast<BYTE*>(wireframePS->GetBufferPointer()), wireframePS->GetBufferSize() };
 	CD3DX12_RASTERIZER_DESC rastDesc(D3D12_DEFAULT);
 	rastDesc.FrontCounterClockwise = true;
 	psoDesc.RasterizerState = rastDesc;
@@ -458,7 +431,7 @@ void RenderingSystem::CreateWireframePSO(std::vector<D3D12_INPUT_ELEMENT_DESC>& 
 	psoDesc.SampleDesc.Count = 1;
 	psoDesc.SampleDesc.Quality = 0;
 	psoDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	ThrowIfFailed(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&wireframePSO_)));
+	ThrowIfFailed(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&wireframePSO)));
 }
 
 void RenderingSystem::CreateParticleRS()
@@ -469,16 +442,7 @@ void RenderingSystem::CreateParticleRS()
 
 	CD3DX12_ROOT_SIGNATURE_DESC rootDesc(_countof(rootParameter), rootParameter, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
-	ComPtr<ID3DBlob> errorBlob;
-	ComPtr<ID3DBlob> serializedRootDesc;
-	
-	ThrowIfFailed(D3D12SerializeRootSignature(&rootDesc, D3D_ROOT_SIGNATURE_VERSION_1, serializedRootDesc.GetAddressOf(), errorBlob.GetAddressOf()));
-
-	if (errorBlob != nullptr) {
-		OutputDebugStringA((char*)errorBlob->GetBufferPointer());
-	}
-
-	ThrowIfFailed(device->CreateRootSignature(0, serializedRootDesc->GetBufferPointer(), serializedRootDesc->GetBufferSize(), IID_PPV_ARGS(&particleRS_)));
+	particleRS = CreateRootSignature(rootDesc);
 }
 
 void RenderingSystem::CreateParticlePSO()
@@ -486,10 +450,10 @@ void RenderingSystem::CreateParticlePSO()
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
 	ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
 	psoDesc.InputLayout = { nullptr, 0 };
-	psoDesc.pRootSignature = particleRS_.Get();
-	psoDesc.VS = { particleVS_->GetBufferPointer(), particleVS_->GetBufferSize() };
-	psoDesc.GS = { particleGS_->GetBufferPointer(), particleGS_->GetBufferSize() };
-	psoDesc.PS = { particlePS_->GetBufferPointer(), particlePS_->GetBufferSize() };
+	psoDesc.pRootSignature = particleRS.Get();
+	psoDesc.VS = { particleVS->GetBufferPointer(), particleVS->GetBufferSize() };
+	psoDesc.GS = { particleGS->GetBufferPointer(), particleGS->GetBufferSize() };
+	psoDesc.PS = { particlePS->GetBufferPointer(), particlePS->GetBufferSize() };
 	CD3DX12_RASTERIZER_DESC rastDesc(D3D12_DEFAULT);
 	rastDesc.CullMode = D3D12_CULL_MODE_NONE;
 	rastDesc.FrontCounterClockwise = true;
@@ -504,7 +468,7 @@ void RenderingSystem::CreateParticlePSO()
 	psoDesc.SampleDesc.Count = 1;
 	psoDesc.SampleDesc.Quality = 0;
 	psoDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	ThrowIfFailed(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&particlePSO_)));
+	ThrowIfFailed(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&particlePSO)));
 }
 
 void RenderingSystem::CreateParticlesUpdateRS()
@@ -519,25 +483,16 @@ void RenderingSystem::CreateParticlesUpdateRS()
 
 	CD3DX12_ROOT_SIGNATURE_DESC rootDesc(_countof(rootParameter), rootParameter, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
-	ComPtr<ID3DBlob> errorBlob;
-	ComPtr<ID3DBlob> serializedRootDesc;
-
-	ThrowIfFailed(D3D12SerializeRootSignature(&rootDesc, D3D_ROOT_SIGNATURE_VERSION_1, serializedRootDesc.GetAddressOf(), errorBlob.GetAddressOf()));
-
-	if (errorBlob != nullptr) {
-		OutputDebugStringA((char*)errorBlob->GetBufferPointer());
-	}
-
-	ThrowIfFailed(device->CreateRootSignature(0, serializedRootDesc->GetBufferPointer(), serializedRootDesc->GetBufferSize(), IID_PPV_ARGS(&particlesUpdateRS_)));
+	particlesUpdateRS = CreateRootSignature(rootDesc);
 }
 
 void RenderingSystem::CreateParticlesUpdatePSO()
 {
 	D3D12_COMPUTE_PIPELINE_STATE_DESC particleUpdatePSO = {};
-	particleUpdatePSO.pRootSignature = particlesUpdateRS_.Get();
-	particleUpdatePSO.CS = { particleUpdateCS_->GetBufferPointer(), particleUpdateCS_->GetBufferSize() };
+	particleUpdatePSO.pRootSignature = particlesUpdateRS.Get();
+	particleUpdatePSO.CS = { particleUpdateCS->GetBufferPointer(), particleUpdateCS->GetBufferSize() };
 	particleUpdatePSO.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
-	ThrowIfFailed(device->CreateComputePipelineState(&particleUpdatePSO, IID_PPV_ARGS(&particlesUpdatePSO_)));
+	ThrowIfFailed(device->CreateComputePipelineState(&particleUpdatePSO, IID_PPV_ARGS(&particlesUpdatePSO)));
 }
 
 void RenderingSystem::CreateParticlesEmitRS()
@@ -550,25 +505,16 @@ void RenderingSystem::CreateParticlesEmitRS()
 
 	CD3DX12_ROOT_SIGNATURE_DESC rootDesc(_countof(rootParameter), rootParameter, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
-	ComPtr<ID3DBlob> errorBlob;
-	ComPtr<ID3DBlob> serializedRootDesc;
-
-	ThrowIfFailed(D3D12SerializeRootSignature(&rootDesc, D3D_ROOT_SIGNATURE_VERSION_1, serializedRootDesc.GetAddressOf(), errorBlob.GetAddressOf()));
-
-	if (errorBlob != nullptr) {
-		OutputDebugStringA((char*)errorBlob->GetBufferPointer());
-	}
-
-	ThrowIfFailed(device->CreateRootSignature(0, serializedRootDesc->GetBufferPointer(), serializedRootDesc->GetBufferSize(), IID_PPV_ARGS(&particlesEmitRS_)));
+	particlesEmitRS = CreateRootSignature(rootDesc);
 }
 
 void RenderingSystem::CreateParticlesEmitPSO()
 {
 	D3D12_COMPUTE_PIPELINE_STATE_DESC particleEmitPSO = {};
-	particleEmitPSO.pRootSignature = particlesEmitRS_.Get();
-	particleEmitPSO.CS = { particleEmitCS_->GetBufferPointer(), particleEmitCS_->GetBufferSize() };
+	particleEmitPSO.pRootSignature = particlesEmitRS.Get();
+	particleEmitPSO.CS = { particleEmitCS->GetBufferPointer(), particleEmitCS->GetBufferSize() };
 	particleEmitPSO.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
-	ThrowIfFailed(device->CreateComputePipelineState(&particleEmitPSO, IID_PPV_ARGS(&particlesEmitPSO_)));
+	ThrowIfFailed(device->CreateComputePipelineState(&particleEmitPSO, IID_PPV_ARGS(&particlesEmitPSO)));
 }
 
 void RenderingSystem::CreateShadowRS()
@@ -579,16 +525,7 @@ void RenderingSystem::CreateShadowRS()
 
 	CD3DX12_ROOT_SIGNATURE_DESC rootDesc(_countof(rootParameter), rootParameter, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
-	ComPtr<ID3DBlob> errorBlob;
-	ComPtr<ID3DBlob> serializedRootDesc;
-
-	ThrowIfFailed(D3D12SerializeRootSignature(&rootDesc, D3D_ROOT_SIGNATURE_VERSION_1, serializedRootDesc.GetAddressOf(), errorBlob.GetAddressOf()));
-
-	if (errorBlob != nullptr) {
-		OutputDebugStringA((char*)errorBlob->GetBufferPointer());
-	}
-
-	ThrowIfFailed(device->CreateRootSignature(0, serializedRootDesc->GetBufferPointer(), serializedRootDesc->GetBufferSize(), IID_PPV_ARGS(&shadowRS_)));
+	shadowRS = CreateRootSignature(rootDesc);
 }
 
 void RenderingSystem::CreateShadowPSO(std::vector<D3D12_INPUT_ELEMENT_DESC>& layout)
@@ -596,8 +533,8 @@ void RenderingSystem::CreateShadowPSO(std::vector<D3D12_INPUT_ELEMENT_DESC>& lay
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;
 	ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
 	psoDesc.InputLayout = { layout.data(), (UINT)layout.size() };
-	psoDesc.pRootSignature = shadowRS_.Get();
-	psoDesc.VS = { reinterpret_cast<BYTE*>(shadowVS_->GetBufferPointer()), shadowVS_->GetBufferSize() };
+	psoDesc.pRootSignature = shadowRS.Get();
+	psoDesc.VS = { reinterpret_cast<BYTE*>(shadowVS->GetBufferPointer()), shadowVS->GetBufferSize() };
 	psoDesc.PS = { nullptr, 0 };
 	CD3DX12_RASTERIZER_DESC rastDesc(D3D12_DEFAULT);
 	rastDesc.FrontCounterClockwise = true;
@@ -614,7 +551,7 @@ void RenderingSystem::CreateShadowPSO(std::vector<D3D12_INPUT_ELEMENT_DESC>& lay
 	psoDesc.SampleDesc.Count = 1;
 	psoDesc.SampleDesc.Quality = 0;
 	psoDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	ThrowIfFailed(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&shadowPSO_)));
+	ThrowIfFailed(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&shadowPSO)));
 }
 
 void RenderingSystem::CreateSSAORS()
@@ -635,16 +572,7 @@ void RenderingSystem::CreateSSAORS()
 
 	CD3DX12_ROOT_SIGNATURE_DESC rootDesc(_countof(rootParameter), rootParameter, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
-	ComPtr<ID3DBlob> errorBlob;
-	ComPtr<ID3DBlob> serializedRootDesc;
-
-	ThrowIfFailed(D3D12SerializeRootSignature(&rootDesc, D3D_ROOT_SIGNATURE_VERSION_1, serializedRootDesc.GetAddressOf(), errorBlob.GetAddressOf()));
-
-	if (errorBlob != nullptr) {
-		OutputDebugStringA((char*)errorBlob->GetBufferPointer());
-	}
-
-	ThrowIfFailed(device->CreateRootSignature(0, serializedRootDesc->GetBufferPointer(), serializedRootDesc->GetBufferSize(), IID_PPV_ARGS(&SsaoRS_)));
+	SsaoRS = CreateRootSignature(rootDesc);
 }
 
 void RenderingSystem::CreateSSAOPSO()
@@ -652,9 +580,9 @@ void RenderingSystem::CreateSSAOPSO()
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;
 	ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
 	psoDesc.InputLayout = { nullptr, 0 };
-	psoDesc.pRootSignature = SsaoRS_.Get();
-	psoDesc.VS = { reinterpret_cast<BYTE*>(fullscreenTriangleVS_->GetBufferPointer()), fullscreenTriangleVS_->GetBufferSize() };
-	psoDesc.PS = { reinterpret_cast<BYTE*>(SsaoPS_->GetBufferPointer()), SsaoPS_->GetBufferSize() };
+	psoDesc.pRootSignature = SsaoRS.Get();
+	psoDesc.VS = { reinterpret_cast<BYTE*>(fullscreenTriangleVS->GetBufferPointer()), fullscreenTriangleVS->GetBufferSize() };
+	psoDesc.PS = { reinterpret_cast<BYTE*>(SsaoPS->GetBufferPointer()), SsaoPS->GetBufferSize() };
 	CD3DX12_RASTERIZER_DESC rastDesc(D3D12_DEFAULT);
 	rastDesc.FrontCounterClockwise = false;
 	psoDesc.RasterizerState = rastDesc;
@@ -674,7 +602,7 @@ void RenderingSystem::CreateSSAOPSO()
 	psoDesc.SampleDesc.Count = 1;
 	psoDesc.SampleDesc.Quality = 0;
 	psoDesc.DSVFormat = DXGI_FORMAT_UNKNOWN;
-	ThrowIfFailed(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&SsaoPSO_)));
+	ThrowIfFailed(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&SsaoPSO)));
 }
 
 void RenderingSystem::CreateSSAOBlurRS()
@@ -693,16 +621,8 @@ void RenderingSystem::CreateSSAOBlurRS()
 
 	CD3DX12_ROOT_SIGNATURE_DESC rootDesc(_countof(rootParameter), rootParameter, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
-	ComPtr<ID3DBlob> errorBlob;
-	ComPtr<ID3DBlob> serializedRootDesc;
-
-	ThrowIfFailed(D3D12SerializeRootSignature(&rootDesc, D3D_ROOT_SIGNATURE_VERSION_1, serializedRootDesc.GetAddressOf(), errorBlob.GetAddressOf()));
-
-	if (errorBlob != nullptr) {
-		OutputDebugStringA((char*)errorBlob->GetBufferPointer());
-	}
-
-	ThrowIfFailed(device->CreateRootSignature(0, serializedRootDesc->GetBufferPointer(), serializedRootDesc->GetBufferSize(), IID_PPV_ARGS(&SsaoBlurRS_)));
+	
+	SsaoBlurRS = CreateRootSignature(rootDesc);
 }
 
 void RenderingSystem::CreateSSAOBlurPSO()
@@ -710,9 +630,9 @@ void RenderingSystem::CreateSSAOBlurPSO()
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;
 	ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
 	psoDesc.InputLayout = { nullptr, 0 };
-	psoDesc.pRootSignature = SsaoBlurRS_.Get();
-	psoDesc.VS = { reinterpret_cast<BYTE*>(fullscreenTriangleVS_->GetBufferPointer()), fullscreenTriangleVS_->GetBufferSize() };
-	psoDesc.PS = { reinterpret_cast<BYTE*>(SsaoBlurPS_->GetBufferPointer()), SsaoBlurPS_->GetBufferSize() };
+	psoDesc.pRootSignature = SsaoBlurRS.Get();
+	psoDesc.VS = { reinterpret_cast<BYTE*>(fullscreenTriangleVS->GetBufferPointer()), fullscreenTriangleVS->GetBufferSize() };
+	psoDesc.PS = { reinterpret_cast<BYTE*>(SsaoBlurPS->GetBufferPointer()), SsaoBlurPS->GetBufferSize() };
 	CD3DX12_RASTERIZER_DESC rastDesc(D3D12_DEFAULT);
 	rastDesc.FrontCounterClockwise = false;
 	psoDesc.RasterizerState = rastDesc;
@@ -732,7 +652,7 @@ void RenderingSystem::CreateSSAOBlurPSO()
 	psoDesc.SampleDesc.Count = 1;
 	psoDesc.SampleDesc.Quality = 0;
 	psoDesc.DSVFormat = DXGI_FORMAT_UNKNOWN;
-	ThrowIfFailed(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&SsaoBlurPSO_)));
+	ThrowIfFailed(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&SsaoBlurPSO)));
 }
 
 void RenderingSystem::CreateBillboardRS()
@@ -750,16 +670,7 @@ void RenderingSystem::CreateBillboardRS()
 
 	CD3DX12_ROOT_SIGNATURE_DESC rootDesc(_countof(rootParameter), rootParameter, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
-	ComPtr<ID3DBlob> errorBlob;
-	ComPtr<ID3DBlob> serializedRootDesc;
-
-	ThrowIfFailed(D3D12SerializeRootSignature(&rootDesc, D3D_ROOT_SIGNATURE_VERSION_1, serializedRootDesc.GetAddressOf(), errorBlob.GetAddressOf()));
-
-	if (errorBlob != nullptr) {
-		OutputDebugStringA((char*)errorBlob->GetBufferPointer());
-	}
-
-	ThrowIfFailed(device->CreateRootSignature(0, serializedRootDesc->GetBufferPointer(), serializedRootDesc->GetBufferSize(), IID_PPV_ARGS(&billboardRS_)));
+	billboardRS = CreateRootSignature(rootDesc);
 }
 
 void RenderingSystem::CreateBillboardPSO()
@@ -767,9 +678,9 @@ void RenderingSystem::CreateBillboardPSO()
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;
 	ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
 	psoDesc.InputLayout = { nullptr, 0 };
-	psoDesc.pRootSignature = billboardRS_.Get();
-	psoDesc.VS = { reinterpret_cast<BYTE*>(billboardVS_->GetBufferPointer()), billboardVS_->GetBufferSize() };
-	psoDesc.PS = { reinterpret_cast<BYTE*>(billboardPS_->GetBufferPointer()), billboardPS_->GetBufferSize() };
+	psoDesc.pRootSignature = billboardRS.Get();
+	psoDesc.VS = { reinterpret_cast<BYTE*>(billboardVS->GetBufferPointer()), billboardVS->GetBufferSize() };
+	psoDesc.PS = { reinterpret_cast<BYTE*>(billboardPS->GetBufferPointer()), billboardPS->GetBufferSize() };
 	CD3DX12_RASTERIZER_DESC rastDesc(D3D12_DEFAULT);
 	rastDesc.FrontCounterClockwise = true;
 	rastDesc.CullMode = D3D12_CULL_MODE_NONE;
@@ -784,7 +695,7 @@ void RenderingSystem::CreateBillboardPSO()
 	psoDesc.SampleDesc.Count = 1;
 	psoDesc.SampleDesc.Quality = 0;
 	psoDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	ThrowIfFailed(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&billboardPSO_)));
+	ThrowIfFailed(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&billboardPSO)));
 }
 
 void RenderingSystem::CreateTAAResolveRS()
@@ -800,16 +711,7 @@ void RenderingSystem::CreateTAAResolveRS()
 
 	CD3DX12_ROOT_SIGNATURE_DESC rootDesc(_countof(rootParameter), rootParameter, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
-	ComPtr<ID3DBlob> errorBlob;
-	ComPtr<ID3DBlob> serializedRootDesc;
-
-	ThrowIfFailed(D3D12SerializeRootSignature(&rootDesc, D3D_ROOT_SIGNATURE_VERSION_1, serializedRootDesc.GetAddressOf(), errorBlob.GetAddressOf()));
-
-	if (errorBlob != nullptr) {
-		OutputDebugStringA((char*)errorBlob->GetBufferPointer());
-	}
-
-	ThrowIfFailed(device->CreateRootSignature(0, serializedRootDesc->GetBufferPointer(), serializedRootDesc->GetBufferSize(), IID_PPV_ARGS(&TAAResolveRS_)));
+	TAAResolveRS = CreateRootSignature(rootDesc);
 }
 
 void RenderingSystem::CreateTAAResolvePSO()
@@ -817,9 +719,9 @@ void RenderingSystem::CreateTAAResolvePSO()
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;
 	ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
 	psoDesc.InputLayout = { nullptr, 0 };
-	psoDesc.pRootSignature = TAAResolveRS_.Get();
-	psoDesc.VS = { reinterpret_cast<BYTE*>(fullscreenTriangleVS_->GetBufferPointer()), fullscreenTriangleVS_->GetBufferSize() };
-	psoDesc.PS = { reinterpret_cast<BYTE*>(TAAResolvePS_->GetBufferPointer()), TAAResolvePS_->GetBufferSize() };
+	psoDesc.pRootSignature = TAAResolveRS.Get();
+	psoDesc.VS = { reinterpret_cast<BYTE*>(fullscreenTriangleVS->GetBufferPointer()), fullscreenTriangleVS->GetBufferSize() };
+	psoDesc.PS = { reinterpret_cast<BYTE*>(TAAResolvePS->GetBufferPointer()), TAAResolvePS->GetBufferSize() };
 	CD3DX12_RASTERIZER_DESC rastDesc(D3D12_DEFAULT);
 	rastDesc.FrontCounterClockwise = false;
 	psoDesc.RasterizerState = rastDesc;
@@ -839,7 +741,7 @@ void RenderingSystem::CreateTAAResolvePSO()
 	psoDesc.SampleDesc.Count = 1;
 	psoDesc.SampleDesc.Quality = 0;
 	psoDesc.DSVFormat = DXGI_FORMAT_UNKNOWN;
-	ThrowIfFailed(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&TAAResolvePSO_)));
+	ThrowIfFailed(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&TAAResolvePSO)));
 }
  
 void RenderingSystem::CreatePPDefaultRS()
@@ -854,16 +756,7 @@ void RenderingSystem::CreatePPDefaultRS()
 
 	CD3DX12_ROOT_SIGNATURE_DESC rootDesc(_countof(rootParameter), rootParameter, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
-	ComPtr<ID3DBlob> errorBlob;
-	ComPtr<ID3DBlob> serializedRootDesc;
-
-	ThrowIfFailed(D3D12SerializeRootSignature(&rootDesc, D3D_ROOT_SIGNATURE_VERSION_1, serializedRootDesc.GetAddressOf(), errorBlob.GetAddressOf()));
-
-	if (errorBlob != nullptr) {
-		OutputDebugStringA((char*)errorBlob->GetBufferPointer());
-	}
-
-	ThrowIfFailed(device->CreateRootSignature(0, serializedRootDesc->GetBufferPointer(), serializedRootDesc->GetBufferSize(), IID_PPV_ARGS(&pp_defaultRS_)));
+	ppDefaultRS = CreateRootSignature(rootDesc);
 }
 
 void RenderingSystem::CreatePPTonemappingPSO()
@@ -871,9 +764,9 @@ void RenderingSystem::CreatePPTonemappingPSO()
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;
 	ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
 	psoDesc.InputLayout = { nullptr, 0 };
-	psoDesc.pRootSignature = pp_defaultRS_.Get();
-	psoDesc.VS = { reinterpret_cast<BYTE*>(fullscreenTriangleVS_->GetBufferPointer()), fullscreenTriangleVS_->GetBufferSize()};
-	psoDesc.PS = { reinterpret_cast<BYTE*>(pp_tonemappingPS_->GetBufferPointer()), pp_tonemappingPS_->GetBufferSize() };
+	psoDesc.pRootSignature = ppDefaultRS.Get();
+	psoDesc.VS = { reinterpret_cast<BYTE*>(fullscreenTriangleVS->GetBufferPointer()), fullscreenTriangleVS->GetBufferSize()};
+	psoDesc.PS = { reinterpret_cast<BYTE*>(ppTonemappingPS->GetBufferPointer()), ppTonemappingPS->GetBufferSize() };
 	CD3DX12_RASTERIZER_DESC rastDesc(D3D12_DEFAULT);
 	//rastDesc.CullMode = D3D12_CULL_MODE_NONE;
 	rastDesc.FrontCounterClockwise = false;
@@ -894,7 +787,7 @@ void RenderingSystem::CreatePPTonemappingPSO()
 	psoDesc.SampleDesc.Count = 1;
 	psoDesc.SampleDesc.Quality = 0;
 	psoDesc.DSVFormat = DXGI_FORMAT_UNKNOWN;
-	ThrowIfFailed(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pp_tonemappingPSO_)));
+	ThrowIfFailed(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&ppTonemappingPSO)));
 }
 
 void RenderingSystem::CreatePPVignettePSO()
@@ -902,9 +795,9 @@ void RenderingSystem::CreatePPVignettePSO()
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;
 	ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
 	psoDesc.InputLayout = { nullptr, 0 };
-	psoDesc.pRootSignature = pp_defaultRS_.Get();
-	psoDesc.VS = { reinterpret_cast<BYTE*>(fullscreenTriangleVS_->GetBufferPointer()), fullscreenTriangleVS_->GetBufferSize() };
-	psoDesc.PS = { reinterpret_cast<BYTE*>(pp_vignettePS_->GetBufferPointer()), pp_vignettePS_->GetBufferSize() };
+	psoDesc.pRootSignature = ppDefaultRS.Get();
+	psoDesc.VS = { reinterpret_cast<BYTE*>(fullscreenTriangleVS->GetBufferPointer()), fullscreenTriangleVS->GetBufferSize() };
+	psoDesc.PS = { reinterpret_cast<BYTE*>(ppVignettePS->GetBufferPointer()), ppVignettePS->GetBufferSize() };
 	CD3DX12_RASTERIZER_DESC rastDesc(D3D12_DEFAULT);
 	//rastDesc.CullMode = D3D12_CULL_MODE_NONE;
 	rastDesc.FrontCounterClockwise = false;
@@ -925,7 +818,7 @@ void RenderingSystem::CreatePPVignettePSO()
 	psoDesc.SampleDesc.Count = 1;
 	psoDesc.SampleDesc.Quality = 0;
 	psoDesc.DSVFormat = DXGI_FORMAT_UNKNOWN;
-	ThrowIfFailed(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pp_vignettePSO_)));
+	ThrowIfFailed(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&ppVignettePSO)));
 }
 
 void RenderingSystem::CreatePPOutputPSO()
@@ -933,9 +826,9 @@ void RenderingSystem::CreatePPOutputPSO()
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;
 	ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
 	psoDesc.InputLayout = { nullptr, 0 };
-	psoDesc.pRootSignature = pp_defaultRS_.Get();
-	psoDesc.VS = { reinterpret_cast<BYTE*>(fullscreenTriangleVS_->GetBufferPointer()), fullscreenTriangleVS_->GetBufferSize() };
-	psoDesc.PS = { reinterpret_cast<BYTE*>(pp_outputPS_->GetBufferPointer()), pp_outputPS_->GetBufferSize() };
+	psoDesc.pRootSignature = ppDefaultRS.Get();
+	psoDesc.VS = { reinterpret_cast<BYTE*>(fullscreenTriangleVS->GetBufferPointer()), fullscreenTriangleVS->GetBufferSize() };
+	psoDesc.PS = { reinterpret_cast<BYTE*>(ppOutputRS->GetBufferPointer()), ppOutputRS->GetBufferSize() };
 	CD3DX12_RASTERIZER_DESC rastDesc(D3D12_DEFAULT);
 	//rastDesc.CullMode = D3D12_CULL_MODE_NONE;
 	rastDesc.FrontCounterClockwise = false;
@@ -956,7 +849,7 @@ void RenderingSystem::CreatePPOutputPSO()
 	psoDesc.SampleDesc.Count = 1;
 	psoDesc.SampleDesc.Quality = 0;
 	psoDesc.DSVFormat = DXGI_FORMAT_UNKNOWN;
-	ThrowIfFailed(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pp_outputPSO_)));
+	ThrowIfFailed(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&ppOutputPSO)));
 }
 
 RenderingSystem::RenderingSystem(int width, int height, ID3D12Resource* noiseTexture) {
@@ -964,17 +857,17 @@ RenderingSystem::RenderingSystem(int width, int height, ID3D12Resource* noiseTex
 	BuildLayouts();
 	CreateOpaqueRS();
 	CompileShaders();
-	CreateOpaquePSO(inputLayout_);
+	CreateOpaquePSO(inputLayout);
 
 	CreateStreamOutputRS();
-	CreateStreamOutputPSO(inputLayout_);
-	CreateBakedPSO(bakedLayout_);
+	CreateStreamOutputPSO(inputLayout);
+	CreateBakedPSO(bakedLayout);
 
 	CreateLightRS();
 	CreateLightPSO();
 
 	CreateWireframeRS();
-	CreateWireframePSO(wireframeLayout_);
+	CreateWireframePSO(wireframeLayout);
 
 	CreateParticleRS();
 	CreateParticlePSO();
@@ -985,7 +878,7 @@ RenderingSystem::RenderingSystem(int width, int height, ID3D12Resource* noiseTex
 	CreateParticlesEmitPSO();
 
 	CreateShadowRS();
-	CreateShadowPSO(inputLayout_);
+	CreateShadowPSO(inputLayout);
 
 	CreateSSAORS();
 	CreateSSAOPSO();
@@ -996,21 +889,21 @@ RenderingSystem::RenderingSystem(int width, int height, ID3D12Resource* noiseTex
 	CreateBillboardRS();
 	CreateBillboardPSO();
 
-	g_buffer = std::make_unique<GBuffer>(width, height);
-	post_process = std::make_unique<PostProcess>(width, height);
-	ssao = std::make_unique<SSAO>(width / 2, height / 2, g_buffer->GetDepthTex().Resource.Get(), g_buffer->GetNormalTex().Resource.Get(), noiseTexture);
+	gBuffer = std::make_unique<GBuffer>(width, height);
+	postProcess = std::make_unique<PostProcess>(width, height);
+	ssao = std::make_unique<SSAO>(width / 2, height / 2, gBuffer->GetDepthTex().Resource.Get(), gBuffer->GetNormalTex().Resource.Get(), noiseTexture);
 	history = std::make_unique<History>(width, height);
 
 	LightConstants sun = {};
 	sun.lightType = 0; // Directional
 	sun.lightDirection = { 0.0f, -1.0f, 0.0f };
 	sun.lightColor = { 1.0f, 0.9f, 0.8f };
-	sceneLights_.push_back(sun);
+	sceneLights.push_back(sun);
 
-	GenerateTreeLights(sceneLights_, { 10.0f, 0.0f, -60.0f }, 350.0f, 100.0f, 500);
+	GenerateTreeLights(sceneLights, { 10.0f, 0.0f, -60.0f }, 350.0f, 100.0f, 500);
 
 	CreateBulbRS();
-	CreateBulbPSO(inputLayout_);
+	CreateBulbPSO(inputLayout);
 
 	CreatePPDefaultRS();
 	CreatePPTonemappingPSO();

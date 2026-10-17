@@ -179,8 +179,8 @@ void SSAO::BarriersToDefault(ComPtr<ID3D12GraphicsCommandList> commandList)
 }
 
 void DX12App::DrawSSAO() {
-	commandList->SetPipelineState(renderSystem->SsaoPSO_.Get());
-	commandList->SetGraphicsRootSignature(renderSystem->SsaoRS_.Get());
+	commandList->SetPipelineState(renderSystem->SsaoPSO.Get());
+	commandList->SetGraphicsRootSignature(renderSystem->SsaoRS.Get());
 
 	D3D12_VIEWPORT ssaoViewport = {};
 	ssaoViewport.TopLeftX = 0.0f;
@@ -222,8 +222,8 @@ void DX12App::BlurSSAO()
 
 	d3dUtil::SwapTextures(commandList, ssaoWriteTexture, ssaoReadTexture);
 
-	commandList->SetPipelineState(renderSystem->SsaoBlurPSO_.Get());
-	commandList->SetGraphicsRootSignature(renderSystem->SsaoBlurRS_.Get());
+	commandList->SetPipelineState(renderSystem->SsaoBlurPSO.Get());
+	commandList->SetGraphicsRootSignature(renderSystem->SsaoBlurRS.Get());
 
 	auto rtv = ssaoWriteTexture->rtvHandle;
 	commandList->OMSetRenderTargets(1, &rtv, true, nullptr);

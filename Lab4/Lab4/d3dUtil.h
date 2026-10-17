@@ -6,7 +6,7 @@
 #include <SimpleMath.h>
 #include "post_process.h"
 
-using namespace Microsoft::WRL;
+using Microsoft::WRL::ComPtr;
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
 

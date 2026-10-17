@@ -5,6 +5,8 @@
 #include <Windows.h>
 #include "submesh.h"
 
+using namespace DirectX;
+
 struct BVHNode {
     BoundingBox bounds;
     std::vector<UINT> submeshIndices;

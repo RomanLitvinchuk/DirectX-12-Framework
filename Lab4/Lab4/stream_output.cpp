@@ -37,8 +37,8 @@ void DX12App::CreateSOBuffers() {
 
 void DX12App::DrawToStreamOutput()
 {
-	commandList->SetPipelineState(renderSystem->streamOutputPSO_.Get());
-	commandList->SetGraphicsRootSignature(renderSystem->streamOutputRS_.Get());
+	commandList->SetPipelineState(renderSystem->streamOutputPSO.Get());
+	commandList->SetGraphicsRootSignature(renderSystem->streamOutputRS.Get());
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST);
 	ID3D12DescriptorHeap* descriptorHeaps[] = { cbvSrvHeap.Get(), samplerHeap.Get() };
 	commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);

@@ -156,7 +156,6 @@
     <ClCompile Include="imgui\imgui_tables.cpp" />
     <ClCompile Include="imgui\imgui_widgets.cpp" />
     <ClCompile Include="input_handler.cpp" />
-    <ClCompile Include="layouts.cpp" />
     <ClCompile Include="octree.cpp" />
     <ClCompile Include="model_parser.cpp" />
     <ClCompile Include="particles_rendering.cpp" />
@@ -199,8 +198,6 @@
     <ClInclude Include="object_constants.h" />
     <ClInclude Include="octree.h" />
     <ClInclude Include="particle.h" />
-    <ClInclude Include="pbf_constants.h" />
-    <ClInclude Include="pbf_simulator.h" />
     <ClInclude Include="post_process.h" />
     <ClInclude Include="rendering_system.h" />
     <ClInclude Include="scene_data.h" />
