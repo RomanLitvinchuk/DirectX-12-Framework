@@ -29,6 +29,7 @@ using namespace DirectX;
 class DX12App
 {
 public:
+	void Init(HWND hWnd);
 	void InitializeDevice();
 	void CreateCommandQueue();
 	void CreateCommandList();

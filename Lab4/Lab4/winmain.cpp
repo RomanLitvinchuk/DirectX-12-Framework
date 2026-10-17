@@ -149,10 +149,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     case WM_CLOSE:
         PostQuitMessage(0);
         break;
-
-    case WM_QUIT:
-        PostQuitMessage(0);
-        break;
     }
 
 
@@ -163,7 +159,7 @@ int WindowClass::WRun(GameTimer* gt) {
     MSG msg = {};
     gt->Reset();
 
-    while (msg.message != WM_CLOSE)
+    while (msg.message != WM_QUIT)
     {
         if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
         {
@@ -196,47 +192,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 	}
 	g_hWnd = wnd.getHWND();
 
-	MyFramework.InitializeDevice();
-    MyFramework.InitFrameResources();
-    MyFramework.CreateCommandList();
-    MyFramework.CreateCommandQueue();
-	MyFramework.CreateSwapChain(g_hWnd);
-
-	MyFramework.CreateRTVAndDSVDescriptorHeaps();
-	MyFramework.CreateRTV();
-	MyFramework.CreateDSV();
-
-    MyFramework.LoadTextures();
-
-    MyFramework.CreateCBVDescriptorHeap();
-    MyFramework.CreateSRV();
-    MyFramework.CreateSamplerHeap();
-
-    MyFramework.CreateImGuiDescriptorHeap();
-    MyFramework.InitImGui(g_hWnd);
-
-	MyFramework.SetViewport();
-	MyFramework.SetScissor();
-
-	MyFramework.InitProjectionMatrix();
-
-    MyFramework.Parsing();
-    MyFramework.BuildOctree();
-
-    MyFramework.CreateSOBuffers();
-
-    MyFramework.BuildBulbGeometry();
-    MyFramework.BuildBoxGeometry();
-	MyFramework.CreateVertexBuffer();
-	MyFramework.CreateIndexBuffer();
-
-	MyFramework.InitUploadBuffers();
-    MyFramework.InitUAVBuffers();
-
-    MyFramework.InitEmitter();
-    MyFramework.InitRenderSystem();
-    MyFramework.InitShadowMap();
-
+    MyFramework.Init(g_hWnd);
 
 	wnd.RegisterRawInputDevice();
 	wnd.ShowWnd();

@@ -149,6 +149,50 @@ void DX12App::ShutdownImGui() {
 	imGuiSrvHeap.Reset();
 }
 
+void DX12App::Init(HWND hWnd)
+{
+	InitializeDevice();
+	InitFrameResources();
+	CreateCommandList();
+	CreateCommandQueue();
+	CreateSwapChain(hWnd);
+
+	CreateRTVAndDSVDescriptorHeaps();
+	CreateRTV();
+	CreateDSV();
+
+	LoadTextures();
+
+	CreateCBVDescriptorHeap();
+	CreateSRV();
+	CreateSamplerHeap();
+
+	CreateImGuiDescriptorHeap();
+	InitImGui(hWnd);
+
+	SetViewport();
+	SetScissor();
+
+	InitProjectionMatrix();
+
+	Parsing();
+	BuildOctree();
+
+	CreateSOBuffers();
+
+	BuildBulbGeometry();
+	BuildBoxGeometry();
+	CreateVertexBuffer();
+	CreateIndexBuffer();
+
+	InitUploadBuffers();
+	InitUAVBuffers();
+
+	InitEmitter();
+	InitRenderSystem();
+	InitShadowMap();
+}
+
 void DX12App::InitializeDevice() {
 	EnableDebug();
 	ThrowIfFailed(CreateDXGIFactory1(IID_PPV_ARGS(&DXGIFactory)));
@@ -287,7 +331,7 @@ void DX12App::CreateSamplerHeap() {
 	ThrowIfFailed(device->CreateDescriptorHeap(&sampHeapDesc, __uuidof(ID3D12DescriptorHeap), (void**)&samplerHeap));
 
 	D3D12_SAMPLER_DESC sampDesc = {};
-	sampDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+	sampDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
 	sampDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 	sampDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 	sampDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;

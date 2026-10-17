@@ -8,4 +8,5 @@ struct ViewportConstants
 	float screenWidth;
 	float screenHeight;
 	Vector2 jitter;
+	Vector2 prevJitter;
 };

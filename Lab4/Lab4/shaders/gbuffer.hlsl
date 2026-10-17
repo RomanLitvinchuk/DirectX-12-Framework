@@ -42,6 +42,7 @@ cbuffer cbViewport : register(b3)
     float screenHeight;
     float screenWidth;
     float2 jitter;
+    float2 prevJitter;
 }
 
 Texture2D DiffuseMap : register(t0);
