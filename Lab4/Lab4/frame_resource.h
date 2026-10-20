@@ -24,12 +24,14 @@ public:
 
 	std::unique_ptr<UploadBuffer<ObjectConstants>> objectsUploadBuffer;
 	std::unique_ptr<UploadBuffer<Matrices>> matricesBuffer;
+	std::unique_ptr<UploadBuffer<PrevMatrices>> prevMatricesBuffer;
 	std::unique_ptr<UploadBuffer<ParticleConstants>> particleConstantsBuffer;
 	std::unique_ptr<UploadBuffer<MaterialConstants>> materialBuffer;
 	std::unique_ptr<UploadBuffer<LightConstants>> lightBuffer;
 	std::unique_ptr<UploadBuffer<CameraConstants>> cameraBuffer;
 	std::unique_ptr<UploadBuffer<HullBuffer>> hullBuffer;
 	std::unique_ptr<UploadBuffer<MeshInstanceData>> instanceBuffer;
+	std::unique_ptr<UploadBuffer<MeshInstanceData>> previousInstanceBuffer;
 	std::unique_ptr<UploadBuffer<WireframeInstanceData>> wireframeInstanceBuffer;
 	std::unique_ptr<UploadBuffer<ShadowConstants>> shadowBuffer;
 	std::unique_ptr<UploadBuffer<SsaoConstants>> ssaoBuffer;

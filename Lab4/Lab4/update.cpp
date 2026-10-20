@@ -12,6 +12,8 @@ void DX12App::Update() {
 	float dt = gt.DeltaTime();
 	float speed = camera.mCameraSpeed * dt;
 
+	UpdatePrevMatricesData();
+
 	inputHandler.handleInput(keyStates, camera, speed);
 
 	camera.UpdateViewMatrix();
@@ -29,6 +31,14 @@ void DX12App::Update() {
 	UpdateShadowData();
 	
 	UpdateViewportConstants();
+}
+
+void DX12App::UpdatePrevMatricesData()
+{
+	PrevMatrices prevMatrices;
+	prevMatrices.prevView = camera.mView_.Transpose();
+	prevMatrices.prevProj = camera.mProj_.Transpose();
+	currentFrameResource->prevMatricesBuffer->CopyData(0, prevMatrices);
 }
 
 void DX12App::UpdateMatricesData() {
@@ -160,7 +170,7 @@ void DX12App::UpdateViewportConstants()
 	viewportData.jitter = jitter;
 
 	uint32_t prevIndex = ((frameIndex - 1) % 16) + 1;
-	float prevJitterX = (Halton(prevIndex, 2) - 0.5f)* 2.0f / clientWidth;
+	float prevJitterX = (Halton(prevIndex, 2) - 0.5f) * 2.0f / clientWidth;
 	float prevJitterY = (Halton(prevIndex, 3) - 0.5f) * 2.0f / clientHeight;
 	Vector2 prevJitter = Vector2(prevJitterX, prevJitterY);
 	viewportData.prevJitter = prevJitter;

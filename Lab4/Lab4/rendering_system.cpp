@@ -100,7 +100,7 @@ ComPtr<ID3D12RootSignature> RenderingSystem::CreateRootSignature(const CD3DX12_R
 }
 
 void RenderingSystem::CreateOpaqueRS() {
-	CD3DX12_ROOT_PARAMETER slotRootParameter[9];
+	CD3DX12_ROOT_PARAMETER slotRootParameter[11];
 	CD3DX12_DESCRIPTOR_RANGE diffuseTable;
 	diffuseTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
 	CD3DX12_DESCRIPTOR_RANGE normalTable;
@@ -118,6 +118,8 @@ void RenderingSystem::CreateOpaqueRS() {
 	slotRootParameter[6].InitAsConstantBufferView(2);
 	slotRootParameter[7].InitAsShaderResourceView(3);
 	slotRootParameter[8].InitAsConstantBufferView(3);
+	slotRootParameter[9].InitAsConstantBufferView(4);
+	slotRootParameter[10].InitAsShaderResourceView(4);
 
 	CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(
 		_countof(slotRootParameter), slotRootParameter,
@@ -144,9 +146,10 @@ void RenderingSystem::CreateOpaquePSO(std::vector<D3D12_INPUT_ELEMENT_DESC>& lay
 	psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
 	psoDesc.SampleMask = UINT_MAX;
 	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-	psoDesc.NumRenderTargets = 2;
+	psoDesc.NumRenderTargets = 3;
 	psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
 	psoDesc.RTVFormats[1] = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	psoDesc.RTVFormats[2] = DXGI_FORMAT_R16G16_FLOAT;
 	psoDesc.SampleDesc.Count = 1;
 	psoDesc.SampleDesc.Quality = 0;
 	psoDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -702,7 +705,7 @@ void RenderingSystem::CreateTAAResolveRS()
 {
 	CD3DX12_ROOT_PARAMETER rootParameter[2];
 	CD3DX12_DESCRIPTOR_RANGE texTable;
-	texTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 2, 0);
+	texTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 3, 0);
 	CD3DX12_DESCRIPTOR_RANGE samplerTable;
 	samplerTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 2, 0);
 

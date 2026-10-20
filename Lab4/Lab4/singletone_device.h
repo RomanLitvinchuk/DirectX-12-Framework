@@ -13,6 +13,7 @@ private:
 
 public:
 	SingletonDevice(const SingletonDevice&) = delete;
+	SingletonDevice& operator=(const SingletonDevice&) = delete;
 
 	static ComPtr<ID3D12Device> GetDevice() {
 		if (device == nullptr) {

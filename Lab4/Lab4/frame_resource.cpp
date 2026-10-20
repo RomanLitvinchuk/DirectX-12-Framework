@@ -8,11 +8,13 @@ FrameResource::FrameResource(UINT materialCount, UINT lightCount, UINT instanceC
 
 	objectsUploadBuffer = std::make_unique<UploadBuffer<ObjectConstants>>(device.Get(), 1, true);
 	matricesBuffer = std::make_unique<UploadBuffer<Matrices>>(device.Get(), 1, true);
+	prevMatricesBuffer = std::make_unique<UploadBuffer<PrevMatrices>>(device.Get(), 1, true);
 	particleConstantsBuffer = std::make_unique<UploadBuffer<ParticleConstants>>(device.Get(), 1, true);
 	materialBuffer = std::make_unique<UploadBuffer<MaterialConstants>>(device.Get(), materialCount, true);
 	cameraBuffer = std::make_unique<UploadBuffer<CameraConstants>>(device.Get(), 1, true);
 	lightBuffer = std::make_unique<UploadBuffer<LightConstants>>(device.Get(), lightCount, false);
 	instanceBuffer = std::make_unique<UploadBuffer<MeshInstanceData>>(device.Get(), instanceCount, false);
+	previousInstanceBuffer = std::make_unique<UploadBuffer<MeshInstanceData>>(device.Get(), instanceCount, false);
 	hullBuffer = std::make_unique<UploadBuffer<HullBuffer>>(device.Get(), 1, true);
 	wireframeInstanceBuffer = std::make_unique<UploadBuffer<WireframeInstanceData>>(device.Get(), 1000, false);
 	shadowBuffer = std::make_unique<UploadBuffer<ShadowConstants>>(device.Get(), 3, true);

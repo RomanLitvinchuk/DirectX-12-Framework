@@ -16,13 +16,16 @@ public:
 	void OnResize(int screenWidt, int screenHeight);
 	MyTexture& GetHistoryA();
 	MyTexture& GetLightTexture();
+	MyTexture& GetMotionTexture();
 	ID3D12DescriptorHeap* GetSrvHeap();
 	ID3D12DescriptorHeap* GetSamplerHeap();
 	void LightBarrier(ComPtr<ID3D12GraphicsCommandList> commandList);
-	void ClearLightTexture(ComPtr<ID3D12GraphicsCommandList> commandList);
+	void MotionBarrier(ComPtr<ID3D12GraphicsCommandList> commandList);
+	void ClearTextures(ComPtr<ID3D12GraphicsCommandList> commandList);
 private:
 	MyTexture historyA;
 	MyTexture lightTexture;
+	MyTexture motionTexture;
 	ComPtr<ID3D12DescriptorHeap> srvHeap;
 	ComPtr<ID3D12DescriptorHeap> rtvHeap;
 	ComPtr<ID3D12DescriptorHeap> samplerHeap;

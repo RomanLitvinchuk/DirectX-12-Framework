@@ -17,3 +17,8 @@ struct Matrices {
 	Matrix invView;
 	Matrix invProj;
 };
+
+struct PrevMatrices {
+	Matrix prevView;
+	Matrix prevProj;
+};

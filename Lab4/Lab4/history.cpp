@@ -33,6 +33,11 @@ MyTexture& History::GetLightTexture()
 	return lightTexture;
 }
 
+MyTexture& History::GetMotionTexture()
+{
+	return motionTexture;
+}
+
 ID3D12DescriptorHeap* History::GetSrvHeap()
 {
 	return srvHeap.Get();
@@ -48,22 +53,30 @@ void History::LightBarrier(ComPtr<ID3D12GraphicsCommandList> commandList)
 	d3dUtil::Barrier(commandList, &lightTexture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 }
 
+void History::MotionBarrier(ComPtr<ID3D12GraphicsCommandList> commandList)
+{
+	d3dUtil::Barrier(commandList, &motionTexture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+}
+
 void History::ResetTextures()
 {
 	historyA.Resource.Reset();
 	lightTexture.Resource.Reset();
+	motionTexture.Resource.Reset();
 }
 
-void History::ClearLightTexture(ComPtr<ID3D12GraphicsCommandList> commandList)
+void History::ClearTextures(ComPtr<ID3D12GraphicsCommandList> commandList)
 {
 	d3dUtil::Barrier(commandList, &lightTexture, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	d3dUtil::Barrier(commandList, &motionTexture, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	commandList->ClearRenderTargetView(lightTexture.rtvHandle, Color(0.0f, 0.0f, 0.0f, 1.0f), 0, nullptr);
+	commandList->ClearRenderTargetView(motionTexture.rtvHandle, Color(0.0f, 0.0f, 0.0f, 1.0f), 0, nullptr);
 }
 
 void History::CreateDescriptorHeaps()
 {
 	D3D12_DESCRIPTOR_HEAP_DESC heapDesc;
-	heapDesc.NumDescriptors = 2;
+	heapDesc.NumDescriptors = 3;
 	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	heapDesc.NodeMask = 0;
 	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
@@ -97,6 +110,11 @@ void History::CreateTextures(int screenWidth, int screenHeight)
 	lightTexture.Resource->SetName(L"Light texture");
 	lightTexture.currentState = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
+	resDesc.Format = DXGI_FORMAT_R16G16_FLOAT;
+	clearValue.Format = DXGI_FORMAT_R16G16_FLOAT;
+	ThrowIfFailed(device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resDesc, D3D12_RESOURCE_STATE_RENDER_TARGET, &clearValue, IID_PPV_ARGS(&motionTexture.Resource)));
+	motionTexture.Resource->SetName(L"Motion texture");
+	motionTexture.currentState = D3D12_RESOURCE_STATE_RENDER_TARGET;
 }
 
 void History::CreateSRV()
@@ -119,6 +137,13 @@ void History::CreateSRV()
 	lightTexture.srvHandle = cpuHandle;
 	lightTexture.srvGpuHandle = gpuHandle;
 	device->CreateShaderResourceView(lightTexture.Resource.Get(), &srvDesc, cpuHandle);
+
+	cpuHandle.Offset(1, srvIncSize);
+	gpuHandle.Offset(1, srvIncSize);
+	motionTexture.srvHandle = cpuHandle;
+	motionTexture.srvGpuHandle = gpuHandle;
+	srvDesc.Format = DXGI_FORMAT_R16G16_FLOAT;
+	device->CreateShaderResourceView(motionTexture.Resource.Get(), &srvDesc, cpuHandle);
 }
 
 void History::CreateRTV()
@@ -136,6 +161,11 @@ void History::CreateRTV()
 	rtvHandle.Offset(1, rtvIncSize);
 	lightTexture.rtvHandle = rtvHandle;
 	device->CreateRenderTargetView(lightTexture.Resource.Get(), &rtvDesc, rtvHandle);
+
+	rtvHandle.Offset(1, rtvIncSize);
+	motionTexture.rtvHandle = rtvHandle;
+	rtvDesc.Format = DXGI_FORMAT_R16G16_FLOAT;
+	device->CreateRenderTargetView(motionTexture.Resource.Get(), &rtvDesc, rtvHandle);
 }
 
 void History::CreateSamplers()

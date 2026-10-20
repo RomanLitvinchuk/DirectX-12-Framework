@@ -57,6 +57,8 @@ struct VS_OUTPUT
     float3 normalW : NORMAL1;
     float2 uv : TEXCOORD0;
     float3 tangentW : TANGENT;
+    float4 currentClipPos : TEXCOORD1;
+    float4 prevClipPos : TEXCOORD2;
 };
 
 VS_OUTPUT BakedVS(BAKED_VS_INPUT input, uint instanceID : SV_InstanceID)
@@ -80,6 +82,8 @@ VS_OUTPUT BakedVS(BAKED_VS_INPUT input, uint instanceID : SV_InstanceID)
     //float4 texC = mul(float4(input.uv, 0.0f, 1.0f), mTexTransform);
     //output.uv = mul(texC, mMatTransform).xy;
     output.uv = input.uv;
+    output.prevClipPos = output.pos;
+    output.currentClipPos = output.pos;
     
     return output;
 }

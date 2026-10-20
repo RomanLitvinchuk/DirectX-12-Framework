@@ -98,6 +98,7 @@ private:
 
 	void UpdateParticleData();
 	void UpdateMatricesData();
+	void UpdatePrevMatricesData();
 	void UpdateFrustumData();
 	void UpdateTextureAnimation();
 	void UpdateTreesLights();

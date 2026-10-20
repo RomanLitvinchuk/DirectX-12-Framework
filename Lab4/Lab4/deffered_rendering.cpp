@@ -20,7 +20,7 @@ void DX12App::Draw()
 	renderSystem->gBuffer->ClearGBuffer(commandList);
 	renderSystem->postProcess->ClearPostProcess(commandList);
 	renderSystem->ssao->ClearSSAO(commandList);
-	renderSystem->history->ClearLightTexture(commandList);
+	renderSystem->history->ClearTextures(commandList);
 
 
 	MyTexture* ppWriteTexture = &renderSystem->postProcess->GetHdrTextureA();
@@ -29,8 +29,8 @@ void DX12App::Draw()
 	bIsTreeVisible = false;
 
 	if (bIsFirstFrame) {
-		DrawToStreamOutput();
-		ThrowIfFailed(commandList->Reset(currentFrameResource->cmdListAlloc.Get(), renderSystem->opaquePSO.Get()));
+		//DrawToStreamOutput();
+		//ThrowIfFailed(commandList->Reset(currentFrameResource->cmdListAlloc.Get(), renderSystem->opaquePSO.Get()));
 		bIsFirstFrame = false;
 	}
 	DrawToGBuffer();
@@ -185,10 +185,10 @@ void DX12App::DrawToGBuffer() {
 	commandList->ClearDepthStencilView(GetDSV(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvs[] = {
-		renderSystem->gBuffer->GetDiffuseTex().rtvHandle, renderSystem->gBuffer->GetNormalTex().rtvHandle
+		renderSystem->gBuffer->GetDiffuseTex().rtvHandle, renderSystem->gBuffer->GetNormalTex().rtvHandle, renderSystem->history->GetMotionTexture().rtvHandle
 	};
 	D3D12_CPU_DESCRIPTOR_HANDLE dsv = renderSystem->gBuffer->GetDepthTex().dsvHandle;
-	commandList->OMSetRenderTargets(2, rtvs, true, &dsv);
+	commandList->OMSetRenderTargets(_countof(rtvs), rtvs, false, &dsv);
 
 	ID3D12DescriptorHeap* descriptorHeaps[] = { cbvSrvHeap.Get(), samplerHeap.Get() };
 	commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
@@ -214,6 +214,7 @@ void DX12App::DrawToGBuffer() {
 		commandList->SetGraphicsRootDescriptorTable(2, samplerHandle); 
 		commandList->SetGraphicsRootConstantBufferView(6, currentFrameResource->hullBuffer->Resource()->GetGPUVirtualAddress());
 		commandList->SetGraphicsRootConstantBufferView(8, currentFrameResource->viewportBuffer->Resource()->GetGPUVirtualAddress());
+		commandList->SetGraphicsRootConstantBufferView(9, currentFrameResource->prevMatricesBuffer->Resource()->GetGPUVirtualAddress());
 
 		UINT matIndex = sm.materialIndex;
 		UINT matSize = d3dUtil::CalcConstantBufferSize(sizeof(MaterialConstants));
@@ -249,19 +250,23 @@ void DX12App::DrawToGBuffer() {
 
 		DrawLOD0ToGBuffer(currentInstanceOffset, sm);
 		DrawLOD1ToGBuffer(currentInstanceOffset, sm);
-		DrawBillboardsToGBuffer(currentInstanceOffset, sm);
+		//DrawBillboardsToGBuffer(currentInstanceOffset, sm);
 	}
+
+	renderSystem->history->MotionBarrier(commandList);
 }
 
 void DX12App::DrawLOD0ToGBuffer(UINT& currentInstanceOffset, Submesh& sm) {
 	if (!sm.sorted_lod0.empty()) {
 		for (size_t i = 0; i < sm.sorted_lod0.size(); i++) {
 			currentFrameResource->instanceBuffer->CopyData(currentInstanceOffset + i, sm.sorted_lod0[i]);
+			currentFrameResource->previousInstanceBuffer->CopyData(currentInstanceOffset + i, sm.sorted_lod0[i]);
 		}
 		commandList->SetGraphicsRootShaderResourceView(7, currentFrameResource->instanceBuffer->Resource()->GetGPUVirtualAddress());
+		commandList->SetGraphicsRootShaderResourceView(10, currentFrameResource->previousInstanceBuffer->Resource()->GetGPUVirtualAddress());
 
 		if (sm.name_.find("Sketchfab") != std::string::npos) {
-			DrawBakedMeshToGBuffer(currentInstanceOffset, sm);
+			//DrawBakedMeshToGBuffer(currentInstanceOffset, sm);
 		}
 		else {
 			commandList->DrawIndexedInstanced(
@@ -295,8 +300,10 @@ void DX12App::DrawLOD1ToGBuffer(UINT& currentInstanceOffset, Submesh& sm) {
 	if (!sm.sorted_lod1.empty()) {
 		for (size_t i = 0; i < sm.sorted_lod1.size(); i++) {
 			currentFrameResource->instanceBuffer->CopyData(currentInstanceOffset + i, sm.sorted_lod1[i]);
+			currentFrameResource->previousInstanceBuffer->CopyData(currentInstanceOffset + i, sm.sorted_lod1[i]);
 		}
 		commandList->SetGraphicsRootShaderResourceView(7, currentFrameResource->instanceBuffer->Resource()->GetGPUVirtualAddress());
+		commandList->SetGraphicsRootShaderResourceView(10, currentFrameResource->previousInstanceBuffer->Resource()->GetGPUVirtualAddress());
 
 		commandList->DrawIndexedInstanced(
 			sm.indexCountLOD1,

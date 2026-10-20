@@ -102,6 +102,8 @@ DS_OUTPUT DS(
         bary.x * patch[0].normal +
         bary.y * patch[1].normal +
         bary.z * patch[2].normal;
+    
+        
 
     normalW = normalize(normalW);
     tangentW = normalize(tangentW);
