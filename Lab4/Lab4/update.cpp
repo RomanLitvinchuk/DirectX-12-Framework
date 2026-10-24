@@ -165,13 +165,13 @@ void DX12App::UpdateViewportConstants()
 
 	uint32_t index = (frameIndex % 16) + 1;
 	float jitterX = (Halton(index, 2) - 0.5f) * 2.0f / clientWidth;
-	float jitterY = (Halton(index, 3) - 0.5f) * 2.0f / clientHeight;
+	float jitterY = -(Halton(index, 3) - 0.5f) * 2.0f / clientHeight;
 	Vector2 jitter = Vector2(jitterX, jitterY);
 	viewportData.jitter = jitter;
 
 	uint32_t prevIndex = ((frameIndex - 1) % 16) + 1;
 	float prevJitterX = (Halton(prevIndex, 2) - 0.5f) * 2.0f / clientWidth;
-	float prevJitterY = (Halton(prevIndex, 3) - 0.5f) * 2.0f / clientHeight;
+	float prevJitterY = -(Halton(prevIndex, 3) - 0.5f) * 2.0f / clientHeight;
 	Vector2 prevJitter = Vector2(prevJitterX, prevJitterY);
 	viewportData.prevJitter = prevJitter;
 	currentFrameResource->viewportBuffer->CopyData(0, viewportData);

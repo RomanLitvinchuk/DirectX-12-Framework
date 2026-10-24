@@ -177,8 +177,12 @@ gBufferOutput PS(VS_OUTPUT input)
     }
     ret.Normal = mul(ret.Normal, mView);
     
-    float2 currentUV = ClipToUV(input.currentClipPos);
-    float2 previousUV = ClipToUV(input.prevClipPos);
+    float2 currentNDC = input.currentClipPos.xy / input.currentClipPos.w - jitter;
+    float2 prevNDC = input.prevClipPos.xy / input.prevClipPos.w - prevJitter;
+    
+    float2 currentUV = currentNDC * float2(0.5f, -0.5f) + 0.5f;
+    float2 previousUV = prevNDC * float2(0.5f, -0.5f) + 0.5f;
+    
     ret.Motion = previousUV - currentUV;
     
     return ret;

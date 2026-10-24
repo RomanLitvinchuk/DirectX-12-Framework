@@ -43,6 +43,6 @@ float4 PS(PS_INPUT input) : SV_Target
     }
     float3 historyColorClamped = clamp(historyColor.rgb, minColor, maxColor);
    
-    float3 result = currentColor.rgb * 0.15 + historyColorClamped * 0.85;
+    float3 result = currentColor.rgb * 0.1 + historyColorClamped * 0.9;
     return float4(result, currentColor.a);
 }
