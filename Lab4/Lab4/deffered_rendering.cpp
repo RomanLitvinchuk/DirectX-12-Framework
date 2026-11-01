@@ -52,9 +52,10 @@ void DX12App::Draw()
 		DrawParticles();
 	}
 
-	bool skipPresent = !bHistoryValid;
+	DrawWireframe();
 
-	if (skipPresent)
+	bool skipPresent = !bHistoryValid;
+	if (skipPresent && bTAAEnabled)
 	{
 		InitHistoryTextureFromCurrentFrame(renderSystem->history->GetLightTexture());
 		bHistoryValid = true;
@@ -62,9 +63,11 @@ void DX12App::Draw()
 	}
 	else
 	{
-		BlurLightTexture();
-		TAAResolve();
-		DrawWireframe();
+		if (bTAAEnabled)
+		{
+			BlurLightTexture();
+			TAAResolve();
+		}
 
 		CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
 			D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
@@ -185,6 +188,10 @@ void DX12App::DrawShadows() {
 void DX12App::DrawToGBuffer() {
 	commandList->ClearDepthStencilView(GetDSV(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 
+	commandList->SetPipelineState(renderSystem->opaquePSO.Get());
+	commandList->SetGraphicsRootSignature(renderSystem->opaqueRS.Get());
+	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvs[] = {
 		renderSystem->gBuffer->GetDiffuseTex().rtvHandle, renderSystem->gBuffer->GetNormalTex().rtvHandle, renderSystem->history->GetMotionTextureA().rtvHandle
 	};
@@ -194,9 +201,12 @@ void DX12App::DrawToGBuffer() {
 	ID3D12DescriptorHeap* descriptorHeaps[] = { cbvSrvHeap.Get(), samplerHeap.Get() };
 	commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
-	commandList->SetGraphicsRootSignature(renderSystem->opaqueRS.Get());
-
+	commandList->SetGraphicsRootConstantBufferView(0, currentFrameResource->objectsUploadBuffer->Resource()->GetGPUVirtualAddress());
 	CD3DX12_GPU_DESCRIPTOR_HANDLE samplerHandle(samplerHeap->GetGPUDescriptorHandleForHeapStart());
+	commandList->SetGraphicsRootDescriptorTable(2, samplerHandle);
+	commandList->SetGraphicsRootConstantBufferView(6, currentFrameResource->hullBuffer->Resource()->GetGPUVirtualAddress());
+	commandList->SetGraphicsRootConstantBufferView(8, currentFrameResource->viewportBuffer->Resource()->GetGPUVirtualAddress());
+	commandList->SetGraphicsRootConstantBufferView(9, currentFrameResource->prevMatricesBuffer->Resource()->GetGPUVirtualAddress());
 
 	commandList->IASetVertexBuffers(0, 1, &vertexBuffers[0]);
 	commandList->IASetIndexBuffer(&indexBufferView);
@@ -207,16 +217,6 @@ void DX12App::DrawToGBuffer() {
 	{
 		auto& sm = sceneData.submeshes[idx];
 
-		commandList->SetGraphicsRootSignature(renderSystem->opaqueRS.Get());
-		commandList->SetPipelineState(renderSystem->opaquePSO.Get());
-		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-		commandList->SetGraphicsRootConstantBufferView(0, currentFrameResource->objectsUploadBuffer->Resource()->GetGPUVirtualAddress()); 
-		commandList->SetGraphicsRootDescriptorTable(2, samplerHandle); 
-		commandList->SetGraphicsRootConstantBufferView(6, currentFrameResource->hullBuffer->Resource()->GetGPUVirtualAddress());
-		commandList->SetGraphicsRootConstantBufferView(8, currentFrameResource->viewportBuffer->Resource()->GetGPUVirtualAddress());
-		commandList->SetGraphicsRootConstantBufferView(9, currentFrameResource->prevMatricesBuffer->Resource()->GetGPUVirtualAddress());
-
 		UINT matIndex = sm.materialIndex;
 		UINT matSize = d3dUtil::CalcConstantBufferSize(sizeof(MaterialConstants));
 		D3D12_GPU_VIRTUAL_ADDRESS matAddress = currentFrameResource->materialBuffer->Resource()->GetGPUVirtualAddress() + matIndex * matSize;
@@ -225,33 +225,20 @@ void DX12App::DrawToGBuffer() {
 		bIsTreeVisible = sceneData.materials[matIndex].isTree == 1;
 		int texHeapIndex = sceneData.materials[matIndex].diffuseTextureIndex + 1;
 
-		CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(
-			cbvSrvHeap->GetGPUDescriptorHandleForHeapStart(),
-			texHeapIndex,
-			cbvDescriptorSize);
-
+		CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(cbvSrvHeap->GetGPUDescriptorHandleForHeapStart(), texHeapIndex, cbvDescriptorSize);
 		commandList->SetGraphicsRootDescriptorTable(1, srvHandle);
 
 		int normHeapIndex = sceneData.materials[matIndex].normalTextureIndex + 1;
-
-		CD3DX12_GPU_DESCRIPTOR_HANDLE normHandle(
-			cbvSrvHeap->GetGPUDescriptorHandleForHeapStart(),
-			normHeapIndex,
-			cbvDescriptorSize);
+		CD3DX12_GPU_DESCRIPTOR_HANDLE normHandle(cbvSrvHeap->GetGPUDescriptorHandleForHeapStart(), normHeapIndex, cbvDescriptorSize);
+		commandList->SetGraphicsRootDescriptorTable(4, normHandle);
 
 		int dispHeapIndex = sceneData.materials[matIndex].displacementTextureIndex + 1;
-
-		CD3DX12_GPU_DESCRIPTOR_HANDLE dispHandle(
-			cbvSrvHeap->GetGPUDescriptorHandleForHeapStart(),
-			dispHeapIndex,
-			cbvDescriptorSize);
+		CD3DX12_GPU_DESCRIPTOR_HANDLE dispHandle(cbvSrvHeap->GetGPUDescriptorHandleForHeapStart(), dispHeapIndex, cbvDescriptorSize);
 		commandList->SetGraphicsRootDescriptorTable(5, dispHandle);
-
-		commandList->SetGraphicsRootDescriptorTable(4, normHandle);
 
 		DrawLOD0ToGBuffer(currentInstanceOffset, sm);
 		DrawLOD1ToGBuffer(currentInstanceOffset, sm);
-		//DrawBillboardsToGBuffer(currentInstanceOffset, sm);
+		DrawBillboardsToGBuffer(currentInstanceOffset, sm);
 	}
 
 	renderSystem->history->MotionBarrier(commandList);
@@ -341,6 +328,15 @@ void DX12App::DrawBillboardsToGBuffer(UINT& currentInstanceOffset, Submesh& sm) 
 		);
 
 		currentInstanceOffset += static_cast<UINT>(sm.sorted_billboards.size());
+
+		commandList->SetPipelineState(renderSystem->opaquePSO.Get());
+		commandList->SetGraphicsRootSignature(renderSystem->opaqueRS.Get());
+		commandList->SetGraphicsRootConstantBufferView(0, currentFrameResource->objectsUploadBuffer->Resource()->GetGPUVirtualAddress());
+		CD3DX12_GPU_DESCRIPTOR_HANDLE samplerHandle(samplerHeap->GetGPUDescriptorHandleForHeapStart());
+		commandList->SetGraphicsRootDescriptorTable(2, samplerHandle);
+		commandList->SetGraphicsRootConstantBufferView(6, currentFrameResource->hullBuffer->Resource()->GetGPUVirtualAddress());
+		commandList->SetGraphicsRootConstantBufferView(8, currentFrameResource->viewportBuffer->Resource()->GetGPUVirtualAddress());
+		commandList->SetGraphicsRootConstantBufferView(9, currentFrameResource->prevMatricesBuffer->Resource()->GetGPUVirtualAddress());
 	}
 }
 
@@ -352,7 +348,15 @@ void DX12App::DrawLights() {
 		currentFrameResource->lightBuffer->CopyData(i, renderSystem->sceneLights[i]);
 	}
 
-	D3D12_CPU_DESCRIPTOR_HANDLE rtv = renderSystem->history->GetLightTexture().rtvHandle;
+	D3D12_CPU_DESCRIPTOR_HANDLE rtv{};
+	if (bTAAEnabled)
+	{
+		rtv = renderSystem->history->GetLightTexture().rtvHandle;
+	}
+	else
+	{
+		rtv = renderSystem->postProcess->GetHdrTextureA().rtvHandle;
+	}
 	commandList->OMSetRenderTargets(1, &rtv, true, nullptr);
 	ID3D12DescriptorHeap* descriptorHeaps[] = { renderSystem->gBuffer->GetSrvHeap().Get(), renderSystem->samplerHeap.Get()};
 	commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);

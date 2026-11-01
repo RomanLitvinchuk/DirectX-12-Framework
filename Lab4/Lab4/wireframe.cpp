@@ -1,4 +1,5 @@
 #include "DX12App.h"
+#include "history.h"
 
 void DX12App::DrawWireframe()
 {
@@ -11,7 +12,15 @@ void DX12App::DrawWireframe()
 
 	commandList->SetGraphicsRootConstantBufferView(0, currentFrameResource->objectsUploadBuffer->Resource()->GetGPUVirtualAddress());
 
-	D3D12_CPU_DESCRIPTOR_HANDLE rtv = renderSystem->postProcess->GetHdrTextureA().rtvHandle;
+	D3D12_CPU_DESCRIPTOR_HANDLE rtv{};
+	if (bTAAEnabled)
+	{
+		rtv = renderSystem->history->GetLightTexture().rtvHandle;
+	}
+	else
+	{
+		rtv = renderSystem->postProcess->GetHdrTextureA().rtvHandle;
+	}
 	auto dsv = renderSystem->gBuffer->GetDepthTex().dsvHandle;
 	commandList->OMSetRenderTargets(1, &rtv, true, &dsv);
 

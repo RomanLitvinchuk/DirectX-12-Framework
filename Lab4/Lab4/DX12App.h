@@ -258,6 +258,7 @@ private:
 	D3D12_STREAM_OUTPUT_BUFFER_VIEW streamOutputBufferView = {};
 	bool bIsFirstFrame = true;
 	bool bHistoryValid = false;
+	bool bTAAEnabled = true;
 	uint32_t frameIndex = 0;
 
 	std::unique_ptr<ShadowMap> shadowMap;

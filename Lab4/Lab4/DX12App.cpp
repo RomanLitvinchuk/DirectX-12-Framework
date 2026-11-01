@@ -122,6 +122,7 @@ void DX12App::BuildImGui() {
 	ImGui::Separator();
 	ImGui::Checkbox("Frustum culling", &camera.bIsFrustumCullingEnabled);
 	ImGui::Checkbox("Vignette", &renderSystem->bVignette);
+	ImGui::Checkbox("TAA", &bTAAEnabled);
 	ImGui::End();
 }
 
