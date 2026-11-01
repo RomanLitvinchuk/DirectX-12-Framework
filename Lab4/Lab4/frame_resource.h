@@ -39,6 +39,7 @@ public:
 	std::unique_ptr<UploadBuffer<uint32_t>> deadParticlesCounterUpload;
 	std::unique_ptr<UploadBuffer<uint32_t>> sortParticlesCounterUpload;
 	std::unique_ptr<UploadBuffer<ViewportConstants>> viewportBuffer;
+	std::unique_ptr<UploadBuffer<GaussianBlurConstants>> gaussianBlurBuffer;
 
 	UINT64 Fence = 0;
 };

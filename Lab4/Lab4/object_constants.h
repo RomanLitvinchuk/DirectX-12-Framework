@@ -22,3 +22,9 @@ struct PrevMatrices {
 	Matrix prevView;
 	Matrix prevProj;
 };
+
+struct GaussianBlurConstants
+{
+	int direction[2];
+	int textureSize[2];
+};

@@ -96,6 +96,8 @@ private:
 	void DrawPPVignette(MyTexture* readLDR, MyTexture* writeLDR);
 	void DrawPPOutput(MyTexture* readLDR);
 
+	void BlurLightTexture();
+
 	void UpdateParticleData();
 	void UpdateMatricesData();
 	void UpdatePrevMatricesData();

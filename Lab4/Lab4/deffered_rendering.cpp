@@ -62,6 +62,7 @@ void DX12App::Draw()
 	}
 	else
 	{
+		BlurLightTexture();
 		TAAResolve();
 		DrawWireframe();
 
@@ -185,7 +186,7 @@ void DX12App::DrawToGBuffer() {
 	commandList->ClearDepthStencilView(GetDSV(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvs[] = {
-		renderSystem->gBuffer->GetDiffuseTex().rtvHandle, renderSystem->gBuffer->GetNormalTex().rtvHandle, renderSystem->history->GetMotionTexture().rtvHandle
+		renderSystem->gBuffer->GetDiffuseTex().rtvHandle, renderSystem->gBuffer->GetNormalTex().rtvHandle, renderSystem->history->GetMotionTextureA().rtvHandle
 	};
 	D3D12_CPU_DESCRIPTOR_HANDLE dsv = renderSystem->gBuffer->GetDepthTex().dsvHandle;
 	commandList->OMSetRenderTargets(_countof(rtvs), rtvs, false, &dsv);
@@ -373,7 +374,6 @@ void DX12App::DrawLights() {
 
 void DX12App::TAAResolve()
 {
-	renderSystem->history->LightBarrier(commandList);
 	commandList->SetPipelineState(renderSystem->TAAResolvePSO.Get());
 	commandList->SetGraphicsRootSignature(renderSystem->TAAResolveRS.Get());
 
@@ -425,6 +425,38 @@ void DX12App::InitHistoryTextureFromCurrentFrame(MyTexture& copyTexture)
 
 	d3dUtil::Barrier(commandList, &copyTexture, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	d3dUtil::Barrier(commandList, &historyA, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+}
+
+void DX12App::BlurLightTexture()
+{
+	renderSystem->history->LightBarrier(commandList);
+	commandList->SetPipelineState(renderSystem->gaussianBlurPSO.Get());
+	commandList->SetComputeRootSignature(renderSystem->gaussianBlurRS.Get());
+	
+	ID3D12DescriptorHeap* descriptorHeaps[] = {renderSystem->history->GetSrvHeap()};
+	commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+
+	commandList->SetComputeRootDescriptorTable(0, renderSystem->history->GetLightTexture().srvGpuHandle);
+	commandList->SetComputeRootDescriptorTable(1, renderSystem->history->GetTempBlurredTexture().uavGpuHandle);
+
+	GaussianBlurConstants blurConstants = {};
+	blurConstants.direction[0] = 1;
+	blurConstants.direction[1] = 0;
+	blurConstants.textureSize[0] = clientWidth;
+	blurConstants.textureSize[1] = clientHeight;
+	currentFrameResource->gaussianBlurBuffer->CopyData(0, blurConstants);
+	commandList->SetComputeRootConstantBufferView(2, currentFrameResource->gaussianBlurBuffer->Resource()->GetGPUVirtualAddress());
+	commandList->Dispatch((clientWidth + 7) / 8, (clientHeight + 7) / 8, 1);
+
+	d3dUtil::Barrier(commandList, &renderSystem->history->GetTempBlurredTexture(), D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
+	commandList->SetComputeRootDescriptorTable(0, renderSystem->history->GetTempBlurredTexture().srvGpuHandle);
+	commandList->SetComputeRootDescriptorTable(1, renderSystem->history->GetCurrentBlurredTexture().uavGpuHandle);
+	blurConstants.direction[0] = 0;
+	blurConstants.direction[1] = 1;
+	currentFrameResource->gaussianBlurBuffer->CopyData(0, blurConstants);
+	commandList->SetComputeRootConstantBufferView(2, currentFrameResource->gaussianBlurBuffer->Resource()->GetGPUVirtualAddress());
+	commandList->Dispatch((clientWidth + 7) / 8, (clientHeight + 7) / 8, 1);
+	d3dUtil::Barrier(commandList, &renderSystem->history->GetCurrentBlurredTexture(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 }
 
 

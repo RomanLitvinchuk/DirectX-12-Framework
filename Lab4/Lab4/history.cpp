@@ -11,6 +11,7 @@ History::History(int screenWidth, int screenHeight)
 	CreateTextures(screenWidth, screenHeight);
 	CreateSRV();
 	CreateRTV();
+	CreateUAV();
 	CreateSamplers();
 }
 
@@ -21,6 +22,7 @@ void History::OnResize(int screenWidth, int screenHeight)
 	CreateTextures(screenWidth, screenHeight);
 	CreateSRV();
 	CreateRTV();
+	CreateUAV();
 }
 
 MyTexture& History::GetHistoryA()
@@ -33,9 +35,24 @@ MyTexture& History::GetLightTexture()
 	return lightTexture;
 }
 
-MyTexture& History::GetMotionTexture()
+MyTexture& History::GetCurrentBlurredTexture()
 {
-	return motionTexture;
+	return currentFrameBlurred;
+}
+
+MyTexture& History::GetTempBlurredTexture()
+{
+	return tempFrameBlurred;
+}
+
+MyTexture& History::GetMotionTextureA()
+{
+	return motionTextureA;
+}
+
+MyTexture& History::GetMotionTextureB()
+{
+	return motionTextureB;
 }
 
 ID3D12DescriptorHeap* History::GetSrvHeap()
@@ -50,38 +67,49 @@ ID3D12DescriptorHeap* History::GetSamplerHeap()
 
 void History::LightBarrier(ComPtr<ID3D12GraphicsCommandList> commandList)
 {
-	d3dUtil::Barrier(commandList, &lightTexture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	d3dUtil::Barrier(commandList, &lightTexture, D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
 }
 
 void History::MotionBarrier(ComPtr<ID3D12GraphicsCommandList> commandList)
 {
-	d3dUtil::Barrier(commandList, &motionTexture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	d3dUtil::Barrier(commandList, &motionTextureA, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 }
 
 void History::ResetTextures()
 {
 	historyA.Resource.Reset();
 	lightTexture.Resource.Reset();
-	motionTexture.Resource.Reset();
+	motionTextureA.Resource.Reset();
+	motionTextureB.Resource.Reset();
+	tempFrameBlurred.Resource.Reset();
+	currentFrameBlurred.Resource.Reset();
 }
 
 void History::ClearTextures(ComPtr<ID3D12GraphicsCommandList> commandList)
 {
 	d3dUtil::Barrier(commandList, &lightTexture, D3D12_RESOURCE_STATE_RENDER_TARGET);
-	d3dUtil::Barrier(commandList, &motionTexture, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	d3dUtil::Barrier(commandList, &motionTextureA, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	commandList->ClearRenderTargetView(lightTexture.rtvHandle, Color(0.0f, 0.0f, 0.0f, 1.0f), 0, nullptr);
-	commandList->ClearRenderTargetView(motionTexture.rtvHandle, Color(0.0f, 0.0f, 0.0f, 1.0f), 0, nullptr);
+	commandList->ClearRenderTargetView(motionTextureA.rtvHandle, Color(0.0f, 0.0f, 0.0f, 1.0f), 0, nullptr);
+	DefaultBarriers(commandList);
+}
+
+void History::DefaultBarriers(ComPtr<ID3D12GraphicsCommandList> commandList)
+{
+	d3dUtil::Barrier(commandList, &tempFrameBlurred, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	d3dUtil::Barrier(commandList, &currentFrameBlurred, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 }
 
 void History::CreateDescriptorHeaps()
 {
 	D3D12_DESCRIPTOR_HEAP_DESC heapDesc;
-	heapDesc.NumDescriptors = 3;
+	heapDesc.NumDescriptors = 8;
 	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	heapDesc.NodeMask = 0;
 	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	ThrowIfFailed(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&srvHeap)));
 
+	heapDesc.NumDescriptors = 5;
 	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	ThrowIfFailed(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&rtvHeap)));
@@ -110,11 +138,25 @@ void History::CreateTextures(int screenWidth, int screenHeight)
 	lightTexture.Resource->SetName(L"Light texture");
 	lightTexture.currentState = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
+	resDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+	ThrowIfFailed(device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resDesc, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, nullptr, IID_PPV_ARGS(&currentFrameBlurred.Resource)));
+	currentFrameBlurred.Resource->SetName(L"Current Frame Blurred");
+	currentFrameBlurred.currentState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+
+	ThrowIfFailed(device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resDesc, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, nullptr, IID_PPV_ARGS(&tempFrameBlurred.Resource)));
+	tempFrameBlurred.Resource->SetName(L"Temporal Frame Blured");
+	tempFrameBlurred.currentState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+
+	resDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 	resDesc.Format = DXGI_FORMAT_R16G16_FLOAT;
 	clearValue.Format = DXGI_FORMAT_R16G16_FLOAT;
-	ThrowIfFailed(device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resDesc, D3D12_RESOURCE_STATE_RENDER_TARGET, &clearValue, IID_PPV_ARGS(&motionTexture.Resource)));
-	motionTexture.Resource->SetName(L"Motion texture");
-	motionTexture.currentState = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	ThrowIfFailed(device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resDesc, D3D12_RESOURCE_STATE_RENDER_TARGET, &clearValue, IID_PPV_ARGS(&motionTextureA.Resource)));
+	motionTextureA.Resource->SetName(L"Motion texture A");
+	motionTextureA.currentState = D3D12_RESOURCE_STATE_RENDER_TARGET;
+
+	ThrowIfFailed(device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resDesc, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, &clearValue, IID_PPV_ARGS(&motionTextureB.Resource)));
+	motionTextureB.Resource->SetName(L"Motion texture B");
+	motionTextureB.currentState = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 }
 
 void History::CreateSRV()
@@ -140,10 +182,29 @@ void History::CreateSRV()
 
 	cpuHandle.Offset(1, srvIncSize);
 	gpuHandle.Offset(1, srvIncSize);
-	motionTexture.srvHandle = cpuHandle;
-	motionTexture.srvGpuHandle = gpuHandle;
+	motionTextureA.srvHandle = cpuHandle;
+	motionTextureA.srvGpuHandle = gpuHandle;
 	srvDesc.Format = DXGI_FORMAT_R16G16_FLOAT;
-	device->CreateShaderResourceView(motionTexture.Resource.Get(), &srvDesc, cpuHandle);
+	device->CreateShaderResourceView(motionTextureA.Resource.Get(), &srvDesc, cpuHandle);
+
+	cpuHandle.Offset(1, srvIncSize);
+	gpuHandle.Offset(1, srvIncSize);
+	motionTextureB.srvHandle = cpuHandle;
+	motionTextureB.srvGpuHandle = gpuHandle;
+	device->CreateShaderResourceView(motionTextureB.Resource.Get(), &srvDesc, cpuHandle);
+
+	cpuHandle.Offset(1, srvIncSize);
+	gpuHandle.Offset(1, srvIncSize);
+	currentFrameBlurred.srvHandle = cpuHandle;
+	currentFrameBlurred.srvGpuHandle = gpuHandle;
+	srvDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	device->CreateShaderResourceView(currentFrameBlurred.Resource.Get(), &srvDesc, cpuHandle);
+
+	cpuHandle.Offset(1, srvIncSize);
+	gpuHandle.Offset(1, srvIncSize);
+	tempFrameBlurred.srvHandle = cpuHandle;
+	tempFrameBlurred.srvGpuHandle = gpuHandle;
+	device->CreateShaderResourceView(tempFrameBlurred.Resource.Get(), &srvDesc, cpuHandle);
 }
 
 void History::CreateRTV()
@@ -163,9 +224,34 @@ void History::CreateRTV()
 	device->CreateRenderTargetView(lightTexture.Resource.Get(), &rtvDesc, rtvHandle);
 
 	rtvHandle.Offset(1, rtvIncSize);
-	motionTexture.rtvHandle = rtvHandle;
+	motionTextureA.rtvHandle = rtvHandle;
 	rtvDesc.Format = DXGI_FORMAT_R16G16_FLOAT;
-	device->CreateRenderTargetView(motionTexture.Resource.Get(), &rtvDesc, rtvHandle);
+	device->CreateRenderTargetView(motionTextureA.Resource.Get(), &rtvDesc, rtvHandle);
+
+	rtvHandle.Offset(1, rtvIncSize);
+	motionTextureB.rtvHandle = rtvHandle;
+	device->CreateRenderTargetView(motionTextureB.Resource.Get(), &rtvDesc, rtvHandle);
+}
+
+void History::CreateUAV()
+{
+	auto uavIncSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(srvHeap->GetCPUDescriptorHandleForHeapStart());
+	CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(srvHeap->GetGPUDescriptorHandleForHeapStart());
+	cpuHandle.Offset(6, uavIncSize);
+	gpuHandle.Offset(6, uavIncSize);
+	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+	uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+	uavDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	currentFrameBlurred.uavHandle = cpuHandle;
+	currentFrameBlurred.uavGpuHandle = gpuHandle;
+	device->CreateUnorderedAccessView(currentFrameBlurred.Resource.Get(), nullptr, &uavDesc, cpuHandle);
+
+	cpuHandle.Offset(1, uavIncSize);
+	gpuHandle.Offset(1, uavIncSize);
+	tempFrameBlurred.uavHandle = cpuHandle;
+	tempFrameBlurred.uavGpuHandle = gpuHandle;
+	device->CreateUnorderedAccessView(tempFrameBlurred.Resource.Get(), nullptr, &uavDesc, cpuHandle);
 }
 
 void History::CreateSamplers()

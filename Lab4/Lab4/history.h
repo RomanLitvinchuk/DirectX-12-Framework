@@ -16,7 +16,10 @@ public:
 	void OnResize(int screenWidt, int screenHeight);
 	MyTexture& GetHistoryA();
 	MyTexture& GetLightTexture();
-	MyTexture& GetMotionTexture();
+	MyTexture& GetCurrentBlurredTexture();
+	MyTexture& GetTempBlurredTexture();
+	MyTexture& GetMotionTextureA();
+	MyTexture& GetMotionTextureB();
 	ID3D12DescriptorHeap* GetSrvHeap();
 	ID3D12DescriptorHeap* GetSamplerHeap();
 	void LightBarrier(ComPtr<ID3D12GraphicsCommandList> commandList);
@@ -25,7 +28,10 @@ public:
 private:
 	MyTexture historyA;
 	MyTexture lightTexture;
-	MyTexture motionTexture;
+	MyTexture currentFrameBlurred;
+	MyTexture tempFrameBlurred;
+	MyTexture motionTextureA;
+	MyTexture motionTextureB;
 	ComPtr<ID3D12DescriptorHeap> srvHeap;
 	ComPtr<ID3D12DescriptorHeap> rtvHeap;
 	ComPtr<ID3D12DescriptorHeap> samplerHeap;
@@ -35,6 +41,8 @@ private:
 	void CreateTextures(int screenWidth, int screenHeight);
 	void CreateSRV();
 	void CreateRTV();
+	void CreateUAV();
 	void CreateSamplers();
 	void ResetTextures();
+	void DefaultBarriers(ComPtr<ID3D12GraphicsCommandList> commandList);
 };

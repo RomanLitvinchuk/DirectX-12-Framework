@@ -50,6 +50,7 @@ void RenderingSystem::CompileShaders() {
 	billboardPS = d3dUtil::CompileShader(L"shaders/billboard.hlsl", nullptr, "PS", "ps_5_0");
 
 	TAAResolvePS = d3dUtil::CompileShader(L"shaders/TAAResolve.hlsl", nullptr, "PS", "ps_5_0");
+	gaussianBlurCS = d3dUtil::CompileShader(L"shaders/gaussianBlur.hlsl", nullptr, "CS", "cs_5_1");
 
 	ppTonemappingPS = d3dUtil::CompileShader(L"shaders/PPTonemapping.hlsl", nullptr, "PS", "ps_5_0");
 	ppVignettePS = d3dUtil::CompileShader(L"shaders/PPVignette.hlsl", nullptr, "PS", "ps_5_0");
@@ -705,12 +706,11 @@ void RenderingSystem::CreateTAAResolveRS()
 {
 	CD3DX12_ROOT_PARAMETER rootParameter[2];
 	CD3DX12_DESCRIPTOR_RANGE texTable;
-	texTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 3, 0);
+	texTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5, 0);
 	CD3DX12_DESCRIPTOR_RANGE samplerTable;
 	samplerTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 2, 0);
-
-	rootParameter[0].InitAsDescriptorTable(1, &texTable);
-	rootParameter[1].InitAsDescriptorTable(1, &samplerTable);
+	rootParameter[0].InitAsDescriptorTable(1, &texTable, D3D12_SHADER_VISIBILITY_PIXEL);
+	rootParameter[1].InitAsDescriptorTable(1, &samplerTable, D3D12_SHADER_VISIBILITY_PIXEL);
 
 	CD3DX12_ROOT_SIGNATURE_DESC rootDesc(_countof(rootParameter), rootParameter, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
@@ -745,6 +745,31 @@ void RenderingSystem::CreateTAAResolvePSO()
 	psoDesc.SampleDesc.Quality = 0;
 	psoDesc.DSVFormat = DXGI_FORMAT_UNKNOWN;
 	ThrowIfFailed(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&TAAResolvePSO)));
+}
+
+void RenderingSystem::CreateGaussianBlurRS()
+{
+	CD3DX12_ROOT_PARAMETER rootParameter[3];
+	CD3DX12_DESCRIPTOR_RANGE srvTable;
+	srvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
+	CD3DX12_DESCRIPTOR_RANGE uavTable;
+	uavTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0);
+	rootParameter[0].InitAsDescriptorTable(1, &srvTable, D3D12_SHADER_VISIBILITY_ALL);
+	rootParameter[1].InitAsDescriptorTable(1, &uavTable, D3D12_SHADER_VISIBILITY_ALL);
+	rootParameter[2].InitAsConstantBufferView(0);
+
+	CD3DX12_ROOT_SIGNATURE_DESC rootDesc(_countof(rootParameter), rootParameter, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+	gaussianBlurRS = CreateRootSignature(rootDesc);
+}
+
+void RenderingSystem::CreateGaussianBlurPSO()
+{
+	D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {};
+	psoDesc.pRootSignature = gaussianBlurRS.Get();
+	psoDesc.CS = { gaussianBlurCS->GetBufferPointer(), gaussianBlurCS->GetBufferSize() };
+	psoDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+	ThrowIfFailed(device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(&gaussianBlurPSO)));
 }
  
 void RenderingSystem::CreatePPDefaultRS()
@@ -915,6 +940,9 @@ RenderingSystem::RenderingSystem(int width, int height, ID3D12Resource* noiseTex
 
 	CreateTAAResolveRS();
 	CreateTAAResolvePSO();
+
+	CreateGaussianBlurRS();
+	CreateGaussianBlurPSO();
 
 
 

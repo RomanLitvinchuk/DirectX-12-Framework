@@ -57,6 +57,9 @@ public:
 	ComPtr<ID3D12RootSignature> TAAResolveRS = nullptr;
 	ComPtr<ID3D12PipelineState> TAAResolvePSO = nullptr;
 
+	ComPtr<ID3D12RootSignature> gaussianBlurRS = nullptr;
+	ComPtr<ID3D12PipelineState> gaussianBlurPSO = nullptr;
+
 	ComPtr<ID3D12RootSignature> ppDefaultRS = nullptr;
 	ComPtr<ID3D12PipelineState> ppTonemappingPSO = nullptr;
 	ComPtr<ID3D12PipelineState> ppVignettePSO = nullptr;
@@ -121,6 +124,9 @@ private:
 	void CreateTAAResolveRS();
 	void CreateTAAResolvePSO();
 
+	void CreateGaussianBlurRS();
+	void CreateGaussianBlurPSO();
+
 	void CreatePPDefaultRS();
 	void CreatePPTonemappingPSO();
 
@@ -166,6 +172,7 @@ private:
 	ComPtr<ID3DBlob> billboardPS = nullptr;
 
 	ComPtr<ID3DBlob> TAAResolvePS = nullptr;
+	ComPtr<ID3DBlob> gaussianBlurCS = nullptr;
 
 	ComPtr<ID3DBlob> ppTonemappingPS = nullptr;
 	ComPtr<ID3DBlob> ppVignettePS = nullptr;
