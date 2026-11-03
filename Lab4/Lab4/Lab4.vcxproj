@@ -78,7 +78,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)imgui;$(ProjectDir)imgui\backends;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)imgui;$(ProjectDir)imgui\backends;D:\DX12-Framework\Lab4\Lab4\FSR;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -93,7 +93,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)imgui;$(ProjectDir)imgui\backends;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)imgui;$(ProjectDir)imgui\backends;D:\DX12-Framework\Lab4\Lab4\FSR;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -106,7 +106,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)imgui;$(ProjectDir)imgui\backends;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)imgui;$(ProjectDir)imgui\backends;D:\DX12-Framework\Lab4\Lab4\FSR;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -127,7 +127,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)imgui;$(ProjectDir)imgui\backends;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)imgui;$(ProjectDir)imgui\backends;D:\DX12-Framework\Lab4\Lab4\FSR;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -146,6 +146,7 @@
     <ClCompile Include="deffered_rendering.cpp" />
     <ClCompile Include="DX12App.cpp" />
     <ClCompile Include="frame_resource.cpp" />
+    <ClCompile Include="fsr_manager.cpp" />
     <ClCompile Include="game_timer.cpp" />
     <ClCompile Include="g_buffer.cpp" />
     <ClCompile Include="history.cpp" />
@@ -179,6 +180,12 @@
     <ClInclude Include="DDSTextureLoader.h" />
     <ClInclude Include="DX12App.h" />
     <ClInclude Include="frame_resource.h" />
+    <ClInclude Include="FSR\ffx_api.h" />
+    <ClInclude Include="FSR\ffx_api_dx12.h" />
+    <ClInclude Include="FSR\ffx_api_loader.h" />
+    <ClInclude Include="FSR\ffx_api_types.h" />
+    <ClInclude Include="FSR\ffx_upscale.h" />
+    <ClInclude Include="fsr_manager.h" />
     <ClInclude Include="game_timer.h" />
     <ClInclude Include="g_buffer.h" />
     <ClInclude Include="history.h" />

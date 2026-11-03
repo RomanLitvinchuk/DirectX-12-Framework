@@ -21,6 +21,7 @@
 #include "scene_data.h"
 #include "input_handler.h"
 #include "frame_resource.h"
+#include "fsr_manager.h"
 
 
 using Microsoft::WRL::ComPtr;
@@ -158,7 +159,7 @@ private:
 
 	void FlushCommandQueue();
 
-
+	void InitFSR();
 
 	GameTimer gt;
 	InputHandler inputHandler;
@@ -264,4 +265,6 @@ private:
 	std::unique_ptr<ShadowMap> shadowMap;
 	float SHADOW_MAP_SIZE = 8192.0f;
 	CascadeData cascades;
+
+	FSRManager fsr;
 };

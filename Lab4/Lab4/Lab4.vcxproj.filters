@@ -22,6 +22,12 @@
     <Filter Include="Исходные файлы\ImGui">
       <UniqueIdentifier>{f6c93f09-2940-4635-8ebf-d0ca45e7a917}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Файлы заголовков\FSR">
+      <UniqueIdentifier>{db9cb0b2-7d6e-47c6-b4b6-c781bba98ca5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Исходные файлы\FSR">
+      <UniqueIdentifier>{c942e0e6-3db6-4095-8286-279ffa79f2fa}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="winmain.cpp">
@@ -131,6 +137,9 @@
     </ClCompile>
     <ClCompile Include="imgui\imgui_widgets.cpp">
       <Filter>Исходные файлы\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="fsr_manager.cpp">
+      <Filter>Исходные файлы\FSR</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -250,6 +259,24 @@
     </ClInclude>
     <ClInclude Include="imgui\imstb_truetype.h">
       <Filter>Файлы заголовков\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="FSR\ffx_api.h">
+      <Filter>Файлы заголовков\FSR</Filter>
+    </ClInclude>
+    <ClInclude Include="FSR\ffx_api_dx12.h">
+      <Filter>Файлы заголовков\FSR</Filter>
+    </ClInclude>
+    <ClInclude Include="FSR\ffx_api_loader.h">
+      <Filter>Файлы заголовков\FSR</Filter>
+    </ClInclude>
+    <ClInclude Include="FSR\ffx_api_types.h">
+      <Filter>Файлы заголовков\FSR</Filter>
+    </ClInclude>
+    <ClInclude Include="FSR\ffx_upscale.h">
+      <Filter>Файлы заголовков\FSR</Filter>
+    </ClInclude>
+    <ClInclude Include="fsr_manager.h">
+      <Filter>Файлы заголовков\FSR</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

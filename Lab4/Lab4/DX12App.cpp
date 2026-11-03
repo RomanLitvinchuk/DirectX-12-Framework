@@ -192,6 +192,18 @@ void DX12App::Init(HWND hWnd)
 	InitEmitter();
 	InitRenderSystem();
 	InitShadowMap();
+
+	InitFSR();
+}
+
+void DX12App::InitFSR()
+{
+	if (!fsr.Load())
+	{
+		OutputDebugStringW(L"FSR Failed to load FidelityFX API!");
+		return;
+	}
+	OutputDebugStringW(L"FidelityFX API loaded successfully");
 }
 
 void DX12App::InitializeDevice() {
