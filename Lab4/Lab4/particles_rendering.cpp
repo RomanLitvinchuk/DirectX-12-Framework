@@ -48,7 +48,7 @@ void DX12App::DrawParticles() {
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
 
 	D3D12_CPU_DESCRIPTOR_HANDLE rtv{};
-	if (bTAAEnabled)
+	if (antiAliasingMode != AntiAliasingMode::None)
 	{
 		rtv = renderSystem->history->GetLightTexture().rtvHandle;
 	}

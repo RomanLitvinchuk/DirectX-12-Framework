@@ -13,7 +13,7 @@ void DX12App::DrawWireframe()
 	commandList->SetGraphicsRootConstantBufferView(0, currentFrameResource->objectsUploadBuffer->Resource()->GetGPUVirtualAddress());
 
 	D3D12_CPU_DESCRIPTOR_HANDLE rtv{};
-	if (bTAAEnabled)
+	if (antiAliasingMode != AntiAliasingMode::None)
 	{
 		rtv = renderSystem->history->GetLightTexture().rtvHandle;
 	}

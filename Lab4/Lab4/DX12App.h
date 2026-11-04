@@ -259,7 +259,10 @@ private:
 	D3D12_STREAM_OUTPUT_BUFFER_VIEW streamOutputBufferView = {};
 	bool bIsFirstFrame = true;
 	bool bHistoryValid = false;
-	bool bTAAEnabled = true;
+	AntiAliasingMode antiAliasingMode = AntiAliasingMode::TAA;
+	Vector2 jitter;
+	Vector2 currentJitterPx;
+	Vector2 prevJitterPx;
 	uint32_t frameIndex = 0;
 
 	std::unique_ptr<ShadowMap> shadowMap;

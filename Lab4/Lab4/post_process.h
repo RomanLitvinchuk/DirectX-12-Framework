@@ -13,6 +13,7 @@ private:
 	MyTexture hdrTextureB;
 	MyTexture ldrTextureA;
 	MyTexture ldrTextureB;
+	//MyTexture fsrOutput;
 	ComPtr<ID3D12DescriptorHeap> srvHeap;
 	ComPtr<ID3D12DescriptorHeap> rtvHeap;
 
@@ -22,6 +23,7 @@ private:
 	void CreateTextures(int width, int height);
 	void CreateSRV();
 	void CreateRTV();
+	void CreateUAV();
 	void BarriersToDefault(ComPtr<ID3D12GraphicsCommandList> commandList);
 	void ResetTextures();
 
@@ -35,6 +37,7 @@ public:
 	MyTexture& GetHdrTextureB();
 	MyTexture& GetLdrTextureA();
 	MyTexture& GetLdrTextureB();
+	//MyTexture& GetFsrOutput();
 	ComPtr<ID3D12DescriptorHeap> GetSrvHeap();
 	ComPtr<ID3D12DescriptorHeap> GetRtvHeap();
 

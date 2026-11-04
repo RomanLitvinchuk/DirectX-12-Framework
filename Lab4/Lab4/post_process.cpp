@@ -11,6 +11,7 @@ PostProcess::PostProcess(int width, int height)
 	CreateTextures(width, height);
 	CreateSRV();
 	CreateRTV();
+	CreateUAV();
 }
 
 MyTexture& PostProcess::GetHdrTextureA() 
@@ -32,6 +33,11 @@ MyTexture& PostProcess::GetLdrTextureB()
 {
 	return ldrTextureB;
 }
+//
+//MyTexture& PostProcess::GetFsrOutput()
+//{
+//	return fsrOutput;
+//}
 
 ComPtr<ID3D12DescriptorHeap> PostProcess::GetSrvHeap() 
 {
@@ -48,9 +54,10 @@ void PostProcess::CreateHeaps()
 	D3D12_DESCRIPTOR_HEAP_DESC descHeap = {};
 	descHeap.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	descHeap.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	descHeap.NumDescriptors = 4;
+	descHeap.NumDescriptors = 6;
 	ThrowIfFailed(device->CreateDescriptorHeap(&descHeap, IID_PPV_ARGS(&srvHeap)));
 
+	descHeap.NumDescriptors = 4;
 	descHeap.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	descHeap.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	ThrowIfFailed(device->CreateDescriptorHeap(&descHeap, IID_PPV_ARGS(&rtvHeap)));
@@ -58,7 +65,7 @@ void PostProcess::CreateHeaps()
 
 void PostProcess::CreateTextures(int width, int height) 
 {
-	D3D12_RESOURCE_DESC resDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R16G16B16A16_FLOAT, width, height, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
+	D3D12_RESOURCE_DESC resDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R16G16B16A16_FLOAT, width, height, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET | D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
 	D3D12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 	D3D12_CLEAR_VALUE clearValue;
 	clearValue.Color[0] = 0.0f;
@@ -70,9 +77,13 @@ void PostProcess::CreateTextures(int width, int height)
 	hdrTextureA.Resource->SetName(L"HDR Post Process Texture A");
 	hdrTextureA.currentState = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
+	resDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 	ThrowIfFailed(device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resDesc, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, &clearValue, IID_PPV_ARGS(&hdrTextureB.Resource)));
 	hdrTextureB.Resource->SetName(L"HDR Post Process Texture B");
 	hdrTextureB.currentState = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+
+	//resDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+	//ThrowIfFailed(device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resDesc, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, nullptr, IID_PPV_ARGS(&fsrOutput.Resource)));
 
 	resDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	clearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -115,6 +126,13 @@ void PostProcess::CreateSRV()
 	ldrTextureB.srvHandle = cpuHandle;
 	ldrTextureB.srvGpuHandle = gpuHandle;
 	device->CreateShaderResourceView(ldrTextureB.Resource.Get(), &srvDesc, cpuHandle);
+
+//	cpuHandle.Offset(1, srvSize);
+//	gpuHandle.Offset(1, srvSize);
+//	srvDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+//	fsrOutput.srvHandle = cpuHandle;
+//	fsrOutput.srvGpuHandle = gpuHandle;
+//	device->CreateShaderResourceView(fsrOutput.Resource.Get(), &srvDesc, cpuHandle);
 }
 
 void PostProcess::CreateRTV()
@@ -128,6 +146,7 @@ void PostProcess::CreateRTV()
 	auto rtvSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	hdrTextureA.rtvHandle = rtvHandle;
 	device->CreateRenderTargetView(hdrTextureA.Resource.Get(), &rtvDesc, rtvHandle);
+
 	rtvHandle.Offset(1, rtvSize);
 	hdrTextureB.rtvHandle = rtvHandle;
 	device->CreateRenderTargetView(hdrTextureB.Resource.Get(), &rtvDesc, rtvHandle);
@@ -140,6 +159,21 @@ void PostProcess::CreateRTV()
 	ldrTextureB.rtvHandle = rtvHandle;
 	device->CreateRenderTargetView(ldrTextureB.Resource.Get(), &rtvDesc, rtvHandle);
 
+}
+
+void PostProcess::CreateUAV()
+{
+	auto uavSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle(srvHeap->GetCPUDescriptorHandleForHeapStart());
+	CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle(srvHeap->GetGPUDescriptorHandleForHeapStart());
+	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc{};
+	uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+	uavDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	cpuHandle.Offset(4, uavSize);
+	gpuHandle.Offset(4, uavSize);
+	hdrTextureA.uavHandle = cpuHandle;
+	hdrTextureA.uavGpuHandle = gpuHandle;
+	device->CreateUnorderedAccessView(hdrTextureA.Resource.Get(), nullptr, &uavDesc, cpuHandle);
 }
 
 void PostProcess::ClearPostProcess(ComPtr<ID3D12GraphicsCommandList> commandList)
@@ -161,6 +195,7 @@ void PostProcess::BarriersToDefault(ComPtr<ID3D12GraphicsCommandList> commandLis
 	d3dUtil::Barrier(commandList, &hdrTextureB, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	d3dUtil::Barrier(commandList, &ldrTextureA, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	d3dUtil::Barrier(commandList, &ldrTextureB, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	//d3dUtil::Barrier(commandList, &fsrOutput, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 }
 
 void PostProcess::OnResize(int width, int height)
@@ -169,6 +204,7 @@ void PostProcess::OnResize(int width, int height)
 	CreateTextures(width, height);
 	CreateSRV();
 	CreateRTV();
+	CreateUAV();
 }
 
 void PostProcess::ResetTextures()
@@ -177,4 +213,5 @@ void PostProcess::ResetTextures()
 	hdrTextureB.Resource.Reset();
 	ldrTextureA.Resource.Reset();
 	ldrTextureB.Resource.Reset();
+	//fsrOutput.Resource.Reset();
 }

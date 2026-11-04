@@ -32,6 +32,10 @@ struct Camera {
 	float mCameraRotationSpeed = 0.3f;
 	float mRadius_ = 5.0f;
 
+	float mNearPlane = 1.0f;
+	float mFarPlane = 100000.0f;
+	float mVerticalFOV = 0.33f * XM_PI;
+
 	Matrix mWorld_ = Matrix::Identity;
 	Matrix mView_ = Matrix::Identity;
 	Matrix mProj_ = Matrix::Identity;

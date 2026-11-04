@@ -122,7 +122,15 @@ void DX12App::BuildImGui() {
 	ImGui::Separator();
 	ImGui::Checkbox("Frustum culling", &camera.bIsFrustumCullingEnabled);
 	ImGui::Checkbox("Vignette", &renderSystem->bVignette);
-	ImGui::Checkbox("TAA", &bTAAEnabled);
+
+	const char* aaModes[] = {"None", "TAA", "FSR Native AA"};
+	int currentMode = static_cast<int>(antiAliasingMode);
+	if (ImGui::Combo("Antialiasing mode", &currentMode, aaModes, IM_ARRAYSIZE(aaModes)))
+	{
+		antiAliasingMode = static_cast<AntiAliasingMode>(currentMode);
+		bHistoryValid = false;
+		
+	}
 	ImGui::End();
 }
 
@@ -200,10 +208,17 @@ void DX12App::InitFSR()
 {
 	if (!fsr.Load())
 	{
-		OutputDebugStringW(L"FSR Failed to load FidelityFX API!");
+		OutputDebugStringW(L"[FSR] Failed to load FidelityFX API!");
 		return;
 	}
-	OutputDebugStringW(L"FidelityFX API loaded successfully");
+	OutputDebugStringW(L"[FSR] FidelityFX API loaded successfully");
+
+	if (!fsr.Initialize(clientWidth, clientHeight, clientWidth, clientHeight))
+	{
+		OutputDebugStringW(L"[FSR] Failed to initialize");
+		return;
+	}
+	OutputDebugStringW(L"[FSR] FSR Manager initialize successfully");
 }
 
 void DX12App::InitializeDevice() {
@@ -471,13 +486,12 @@ void DX12App::InitProjectionMatrix() {
 	float aspectRatio = static_cast<float>(clientWidth) / clientHeight;
 
 	camera.mProj_ = Matrix::CreatePerspectiveFieldOfView(
-		XMConvertToRadians(60.0f),  
+		camera.mVerticalFOV,  
 		aspectRatio,                
-		1.0f,                       
-		100000.0f                    
+		camera.mNearPlane,                       
+		camera.mFarPlane                  
 	);
-	float fovAngleY = 0.33f * XM_PI;
-	camera.xmProj = XMMatrixPerspectiveFovLH(fovAngleY, aspectRatio, 1.0f, 100000.0f);
+	camera.xmProj = XMMatrixPerspectiveFovLH(camera.mVerticalFOV, aspectRatio, camera.mNearPlane, camera.mFarPlane);
 }
 
 
