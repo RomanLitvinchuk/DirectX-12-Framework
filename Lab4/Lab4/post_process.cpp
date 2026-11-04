@@ -33,11 +33,6 @@ MyTexture& PostProcess::GetLdrTextureB()
 {
 	return ldrTextureB;
 }
-//
-//MyTexture& PostProcess::GetFsrOutput()
-//{
-//	return fsrOutput;
-//}
 
 ComPtr<ID3D12DescriptorHeap> PostProcess::GetSrvHeap() 
 {
@@ -82,9 +77,6 @@ void PostProcess::CreateTextures(int width, int height)
 	hdrTextureB.Resource->SetName(L"HDR Post Process Texture B");
 	hdrTextureB.currentState = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 
-	//resDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-	//ThrowIfFailed(device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resDesc, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, nullptr, IID_PPV_ARGS(&fsrOutput.Resource)));
-
 	resDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	clearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	ThrowIfFailed(device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resDesc, D3D12_RESOURCE_STATE_RENDER_TARGET, &clearValue, IID_PPV_ARGS(&ldrTextureA.Resource)));
@@ -126,13 +118,6 @@ void PostProcess::CreateSRV()
 	ldrTextureB.srvHandle = cpuHandle;
 	ldrTextureB.srvGpuHandle = gpuHandle;
 	device->CreateShaderResourceView(ldrTextureB.Resource.Get(), &srvDesc, cpuHandle);
-
-//	cpuHandle.Offset(1, srvSize);
-//	gpuHandle.Offset(1, srvSize);
-//	srvDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
-//	fsrOutput.srvHandle = cpuHandle;
-//	fsrOutput.srvGpuHandle = gpuHandle;
-//	device->CreateShaderResourceView(fsrOutput.Resource.Get(), &srvDesc, cpuHandle);
 }
 
 void PostProcess::CreateRTV()
@@ -178,24 +163,65 @@ void PostProcess::CreateUAV()
 
 void PostProcess::ClearPostProcess(ComPtr<ID3D12GraphicsCommandList> commandList)
 {
-	d3dUtil::Barrier(commandList, &hdrTextureA, D3D12_RESOURCE_STATE_RENDER_TARGET);
-	d3dUtil::Barrier(commandList, &hdrTextureB, D3D12_RESOURCE_STATE_RENDER_TARGET);
-	d3dUtil::Barrier(commandList, &ldrTextureA, D3D12_RESOURCE_STATE_RENDER_TARGET);
-	d3dUtil::Barrier(commandList, &ldrTextureB, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	std::vector<CD3DX12_RESOURCE_BARRIER> clearBarriers;
+	clearBarriers.reserve(4);
+
+	CD3DX12_RESOURCE_BARRIER tempBarrier;
+	if (d3dUtil::Barrier(&hdrTextureA, D3D12_RESOURCE_STATE_RENDER_TARGET, tempBarrier))
+	{
+		clearBarriers.push_back(tempBarrier);
+	}
+	if (d3dUtil::Barrier(&hdrTextureB, D3D12_RESOURCE_STATE_RENDER_TARGET, tempBarrier))
+	{
+		clearBarriers.push_back(tempBarrier);
+	}
+	if (d3dUtil::Barrier(&ldrTextureA, D3D12_RESOURCE_STATE_RENDER_TARGET, tempBarrier))
+	{
+		clearBarriers.push_back(tempBarrier);
+	}
+	if (d3dUtil::Barrier(&ldrTextureB, D3D12_RESOURCE_STATE_RENDER_TARGET, tempBarrier))
+	{
+		clearBarriers.push_back(tempBarrier);
+	}
+	if (!clearBarriers.empty())
+	{
+		commandList->ResourceBarrier(static_cast<UINT>(clearBarriers.size()), clearBarriers.data());
+	}
+
 	commandList->ClearRenderTargetView(hdrTextureA.rtvHandle, Color(0.0f, 0.0f, 0.0f, 1.0f), 0, nullptr);
 	commandList->ClearRenderTargetView(hdrTextureB.rtvHandle, Color(0.0f, 0.0f, 0.0f, 1.0f), 0, nullptr);
 	commandList->ClearRenderTargetView(ldrTextureA.rtvHandle, Color(0.0f, 0.0f, 0.0f, 1.0f), 0, nullptr);
 	commandList->ClearRenderTargetView(ldrTextureB.rtvHandle, Color(0.0f, 0.0f, 0.0f, 1.0f), 0, nullptr);
+
 	BarriersToDefault(commandList);
 }
 
 void PostProcess::BarriersToDefault(ComPtr<ID3D12GraphicsCommandList> commandList)
 {
-	d3dUtil::Barrier(commandList, &hdrTextureA, D3D12_RESOURCE_STATE_RENDER_TARGET);
-	d3dUtil::Barrier(commandList, &hdrTextureB, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	d3dUtil::Barrier(commandList, &ldrTextureA, D3D12_RESOURCE_STATE_RENDER_TARGET);
-	d3dUtil::Barrier(commandList, &ldrTextureB, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	//d3dUtil::Barrier(commandList, &fsrOutput, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	std::vector<CD3DX12_RESOURCE_BARRIER> defaultBarriers;
+	defaultBarriers.reserve(4);
+
+	CD3DX12_RESOURCE_BARRIER tempBarrier;
+	if (d3dUtil::Barrier(&hdrTextureA, D3D12_RESOURCE_STATE_RENDER_TARGET, tempBarrier))
+	{
+		defaultBarriers.push_back(tempBarrier);
+	}
+	if (d3dUtil::Barrier(&hdrTextureB, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, tempBarrier))
+	{
+		defaultBarriers.push_back(tempBarrier);
+	}
+	if (d3dUtil::Barrier(&ldrTextureA, D3D12_RESOURCE_STATE_RENDER_TARGET, tempBarrier))
+	{
+		defaultBarriers.push_back(tempBarrier);
+	}
+	if (d3dUtil::Barrier(&ldrTextureB, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, tempBarrier))
+	{
+		defaultBarriers.push_back(tempBarrier);
+	}
+	if (!defaultBarriers.empty())
+	{
+		commandList->ResourceBarrier(static_cast<UINT>(defaultBarriers.size()), defaultBarriers.data());
+	}
 }
 
 void PostProcess::OnResize(int width, int height)
@@ -213,5 +239,4 @@ void PostProcess::ResetTextures()
 	hdrTextureB.Resource.Reset();
 	ldrTextureA.Resource.Reset();
 	ldrTextureB.Resource.Reset();
-	//fsrOutput.Resource.Reset();
 }

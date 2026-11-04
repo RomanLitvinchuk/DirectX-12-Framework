@@ -5,6 +5,8 @@
 #include <string>
 #include <SimpleMath.h>
 #include "post_process.h"
+#include <d3dx12.h>
+#include <optional>
 
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
@@ -22,7 +24,7 @@ public:
 		const std::string& entrypoint,
 		const std::string& target);
 	static DXGI_FORMAT MakeSRGB(DXGI_FORMAT format);
-	static void Barrier(ComPtr<ID3D12GraphicsCommandList> commandList, MyTexture* texture, D3D12_RESOURCE_STATES newState);
+	static bool Barrier(MyTexture* texture, D3D12_RESOURCE_STATES newState, CD3DX12_RESOURCE_BARRIER& outBarrier);
 	static void SwapTextures(ComPtr<ID3D12GraphicsCommandList> commandList, MyTexture*& writeTexture, MyTexture*& readTexture);
 private:
 };

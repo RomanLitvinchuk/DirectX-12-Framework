@@ -76,15 +76,17 @@ void GBuffer::CreateTextures(int width, int height)
 	clearValue.Color[1] = 0.0f;
 	clearValue.Color[2] = 0.0f;
 	clearValue.Color[3] = 1.0f;
-	ThrowIfFailed(device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resDesc, D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE,
+	ThrowIfFailed(device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resDesc, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
 		&clearValue, IID_PPV_ARGS(&diffuseTex.Resource)));
 	diffuseTex.Resource->SetName(L"Diffuse texture");
+	diffuseTex.currentState = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 
 	clearValue.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
 	resDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
-	ThrowIfFailed(device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resDesc, D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE,
+	ThrowIfFailed(device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resDesc, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
 		&clearValue, IID_PPV_ARGS(&normalTex.Resource)));
 	normalTex.Resource->SetName(L"Normal texture");
+	normalTex.currentState = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 
 	clearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	clearValue.DepthStencil.Depth = 1.0f;
@@ -94,6 +96,7 @@ void GBuffer::CreateTextures(int width, int height)
 	ThrowIfFailed(device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resDesc, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_DEPTH_READ,
 		&clearValue, IID_PPV_ARGS(&depthTex.Resource)));
 	depthTex.Resource->SetName(L"Depth texture");
+	depthTex.currentState = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_DEPTH_READ;
 }
 
 void GBuffer::CreateRTVandDSV() 
@@ -147,27 +150,48 @@ void GBuffer::CreateSRV()
 
 void GBuffer::TransitToOpaqueRenderingState(ComPtr<ID3D12GraphicsCommandList> commandList) 
 {
-	CD3DX12_RESOURCE_BARRIER diffuseBarrier = CD3DX12_RESOURCE_BARRIER::Transition(diffuseTex.Resource.Get(), D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE,
-		D3D12_RESOURCE_STATE_RENDER_TARGET);
-	CD3DX12_RESOURCE_BARRIER normalBarrier = CD3DX12_RESOURCE_BARRIER::Transition(normalTex.Resource.Get(), D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE,
-		D3D12_RESOURCE_STATE_RENDER_TARGET);
-	CD3DX12_RESOURCE_BARRIER depthBarrier = CD3DX12_RESOURCE_BARRIER::Transition(depthTex.Resource.Get(), 
-		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_DEPTH_READ,
-		D3D12_RESOURCE_STATE_DEPTH_WRITE);
-	D3D12_RESOURCE_BARRIER barriers[] = { diffuseBarrier, normalBarrier, depthBarrier };
-	commandList->ResourceBarrier(3, barriers);
+	std::vector<CD3DX12_RESOURCE_BARRIER> barriers;
+	barriers.reserve(3);
+	CD3DX12_RESOURCE_BARRIER tempBarrier;
+	if (d3dUtil::Barrier(&diffuseTex, D3D12_RESOURCE_STATE_RENDER_TARGET, tempBarrier))
+	{
+		barriers.push_back(tempBarrier);
+	}
+	if (d3dUtil::Barrier(&normalTex, D3D12_RESOURCE_STATE_RENDER_TARGET, tempBarrier))
+	{
+		barriers.push_back(tempBarrier);
+	}
+	if (d3dUtil::Barrier(&depthTex, D3D12_RESOURCE_STATE_DEPTH_WRITE, tempBarrier))
+	{
+		barriers.push_back(tempBarrier);
+	}
+	if (!barriers.empty())
+	{
+		commandList->ResourceBarrier(static_cast<UINT>(barriers.size()), barriers.data());
+	}
 }
 
 void GBuffer::TransitToLightsRenderingState(ComPtr<ID3D12GraphicsCommandList> commandList) 
 {
-	CD3DX12_RESOURCE_BARRIER diffuseBarrier = CD3DX12_RESOURCE_BARRIER::Transition(diffuseTex.Resource.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET,
-		D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
-	CD3DX12_RESOURCE_BARRIER normalBarrier = CD3DX12_RESOURCE_BARRIER::Transition(normalTex.Resource.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET,
-		D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
-	CD3DX12_RESOURCE_BARRIER depthBarrier = CD3DX12_RESOURCE_BARRIER::Transition(depthTex.Resource.Get(), D3D12_RESOURCE_STATE_DEPTH_WRITE,
-		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_DEPTH_READ);
-	D3D12_RESOURCE_BARRIER barriers[] = { diffuseBarrier, normalBarrier, depthBarrier };
-	commandList->ResourceBarrier(3, barriers);
+	std::vector<CD3DX12_RESOURCE_BARRIER> barriers;
+	barriers.reserve(3);
+	CD3DX12_RESOURCE_BARRIER tempBarrier;
+	if (d3dUtil::Barrier(&diffuseTex, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, tempBarrier))
+	{
+		barriers.push_back(tempBarrier);
+	}
+	if (d3dUtil::Barrier(&normalTex, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, tempBarrier))
+	{
+		barriers.push_back(tempBarrier);
+	}
+	if (d3dUtil::Barrier(&depthTex, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_DEPTH_READ, tempBarrier))
+	{
+		barriers.push_back(tempBarrier);
+	}
+	if (!barriers.empty())
+	{
+		commandList->ResourceBarrier(static_cast<UINT>(barriers.size()), barriers.data());
+	}
 }
 
 void GBuffer::OnResize(int width, int height) 

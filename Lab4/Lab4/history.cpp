@@ -67,12 +67,36 @@ ID3D12DescriptorHeap* History::GetSamplerHeap()
 
 void History::LightBarrier(ComPtr<ID3D12GraphicsCommandList> commandList)
 {
-	d3dUtil::Barrier(commandList, &lightTexture, D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
+	std::vector<CD3DX12_RESOURCE_BARRIER> barriers;
+	barriers.reserve(1);
+
+	CD3DX12_RESOURCE_BARRIER tempBarrier;
+	if (d3dUtil::Barrier(&lightTexture, D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE, tempBarrier))
+	{
+		barriers.push_back(tempBarrier);
+	}
+
+	if (!barriers.empty())
+	{
+		commandList->ResourceBarrier(static_cast<UINT>(barriers.size()), barriers.data());
+	}
 }
 
 void History::MotionBarrier(ComPtr<ID3D12GraphicsCommandList> commandList)
 {
-	d3dUtil::Barrier(commandList, &motionTextureA, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	std::vector<CD3DX12_RESOURCE_BARRIER> barriers;
+	barriers.reserve(1);
+
+	CD3DX12_RESOURCE_BARRIER tempBarrier;
+	if (d3dUtil::Barrier(&motionTextureA, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, tempBarrier))
+	{
+		barriers.push_back(tempBarrier);
+	}
+
+	if (!barriers.empty())
+	{
+		commandList->ResourceBarrier(static_cast<UINT>(barriers.size()), barriers.data());
+	}
 }
 
 void History::ResetTextures()
@@ -87,17 +111,53 @@ void History::ResetTextures()
 
 void History::ClearTextures(ComPtr<ID3D12GraphicsCommandList> commandList)
 {
-	d3dUtil::Barrier(commandList, &lightTexture, D3D12_RESOURCE_STATE_RENDER_TARGET);
-	d3dUtil::Barrier(commandList, &motionTextureA, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	std::vector<CD3DX12_RESOURCE_BARRIER> clearBarriers;
+	clearBarriers.reserve(2);
+
+	CD3DX12_RESOURCE_BARRIER tempBarrier;
+
+	if (d3dUtil::Barrier(&lightTexture, D3D12_RESOURCE_STATE_RENDER_TARGET, tempBarrier))
+	{
+		clearBarriers.push_back(tempBarrier);
+	}
+
+	if (d3dUtil::Barrier(&motionTextureA, D3D12_RESOURCE_STATE_RENDER_TARGET, tempBarrier))
+	{
+		clearBarriers.push_back(tempBarrier);
+	}
+
+	if (!clearBarriers.empty())
+	{
+		commandList->ResourceBarrier(static_cast<UINT>(clearBarriers.size()), clearBarriers.data());
+	}
+
 	commandList->ClearRenderTargetView(lightTexture.rtvHandle, Color(0.0f, 0.0f, 0.0f, 1.0f), 0, nullptr);
 	commandList->ClearRenderTargetView(motionTextureA.rtvHandle, Color(0.0f, 0.0f, 0.0f, 1.0f), 0, nullptr);
+
 	DefaultBarriers(commandList);
 }
 
 void History::DefaultBarriers(ComPtr<ID3D12GraphicsCommandList> commandList)
 {
-	d3dUtil::Barrier(commandList, &tempFrameBlurred, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-	d3dUtil::Barrier(commandList, &currentFrameBlurred, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	std::vector<CD3DX12_RESOURCE_BARRIER> defaultBarriers;
+	defaultBarriers.reserve(2);
+
+	CD3DX12_RESOURCE_BARRIER tempBarrier;
+
+	if (d3dUtil::Barrier(&tempFrameBlurred, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, tempBarrier))
+	{
+		defaultBarriers.push_back(tempBarrier);
+	}
+
+	if (d3dUtil::Barrier(&currentFrameBlurred, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, tempBarrier))
+	{
+		defaultBarriers.push_back(tempBarrier);
+	}
+
+	if (!defaultBarriers.empty())
+	{
+		commandList->ResourceBarrier(static_cast<UINT>(defaultBarriers.size()), defaultBarriers.data());
+	}
 }
 
 void History::CreateDescriptorHeaps()

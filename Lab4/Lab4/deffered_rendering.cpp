@@ -115,16 +115,50 @@ void DX12App::Draw()
 			fsrFrame.farPlane = camera.mFarPlane;
 			fsrFrame.verticalFov = camera.mVerticalFOV;
 			fsrFrame.reset = !bHistoryValid;
-			d3dUtil::Barrier(commandList.Get(), &renderSystem->history->GetLightTexture(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-			d3dUtil::Barrier(commandList.Get(), &renderSystem->gBuffer->GetDepthTex(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-			d3dUtil::Barrier(commandList.Get(), &renderSystem->history->GetMotionTextureA(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-			d3dUtil::Barrier(commandList.Get(), &renderSystem->postProcess->GetHdrTextureA(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+
+			std::vector<CD3DX12_RESOURCE_BARRIER> FXBarriers;
+			FXBarriers.reserve(4);
+			CD3DX12_RESOURCE_BARRIER tempBarrier;
+			if (d3dUtil::Barrier(&renderSystem->history->GetLightTexture(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, tempBarrier))
+			{
+				FXBarriers.push_back(tempBarrier);
+			}
+			if (d3dUtil::Barrier(&renderSystem->gBuffer->GetDepthTex(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, tempBarrier))
+			{
+				FXBarriers.push_back(tempBarrier);
+			}
+			if (d3dUtil::Barrier(&renderSystem->history->GetMotionTextureA(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, tempBarrier))
+			{
+				FXBarriers.push_back(tempBarrier);
+			}
+			if (d3dUtil::Barrier(&renderSystem->postProcess->GetHdrTextureA(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, tempBarrier))
+			{
+				FXBarriers.push_back(tempBarrier);
+			}
+			if (!FXBarriers.empty())
+			{
+				commandList->ResourceBarrier(static_cast<UINT>(FXBarriers.size()), FXBarriers.data());
+			}
+
 			if (!fsr.Dispatch(fsrFrame))
 			{
 				OutputDebugStringW(L"[FSR] Dispatch failed");
 			}
-			d3dUtil::Barrier(commandList.Get(), &renderSystem->postProcess->GetHdrTextureA(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-			d3dUtil::Barrier(commandList.Get(), &renderSystem->gBuffer->GetDepthTex(), D3D12_RESOURCE_STATE_DEPTH_READ | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+			std::vector<CD3DX12_RESOURCE_BARRIER> FXOutBarriers;
+			FXOutBarriers.reserve(2);
+			if (d3dUtil::Barrier(&renderSystem->postProcess->GetHdrTextureA(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, tempBarrier))
+			{
+				FXOutBarriers.push_back(tempBarrier);
+			}
+			if (d3dUtil::Barrier(&renderSystem->gBuffer->GetDepthTex(), D3D12_RESOURCE_STATE_DEPTH_READ | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, tempBarrier))
+			{
+				FXOutBarriers.push_back(tempBarrier);
+			}
+			if (!FXOutBarriers.empty())
+			{
+				commandList->ResourceBarrier(static_cast<UINT>(FXOutBarriers.size()), FXOutBarriers.data());
+			}
 			bHistoryValid = true;
 			break;
 		}
@@ -481,13 +515,37 @@ void DX12App::InitHistoryTextureFromCurrentFrame(MyTexture& copyTexture)
 {
 	auto& historyA = renderSystem->history->GetHistoryA();
 
-	d3dUtil::Barrier(commandList, &copyTexture, D3D12_RESOURCE_STATE_COPY_SOURCE);
-	d3dUtil::Barrier(commandList, &historyA, D3D12_RESOURCE_STATE_COPY_DEST);
+	std::vector<CD3DX12_RESOURCE_BARRIER> barriers;
+	barriers.reserve(2);
+	CD3DX12_RESOURCE_BARRIER tempBarrier;
+	if (d3dUtil::Barrier(&copyTexture, D3D12_RESOURCE_STATE_COPY_SOURCE, tempBarrier))
+	{
+		barriers.push_back(tempBarrier);
+	}
+	if (d3dUtil::Barrier(&historyA, D3D12_RESOURCE_STATE_COPY_DEST, tempBarrier))
+	{
+		barriers.push_back(tempBarrier);
+	}
+	if (!barriers.empty())
+	{
+		commandList->ResourceBarrier(static_cast<UINT>(barriers.size()), barriers.data());
+	}
 
 	commandList->CopyResource(historyA.Resource.Get(), copyTexture.Resource.Get());
 
-	d3dUtil::Barrier(commandList, &copyTexture, D3D12_RESOURCE_STATE_RENDER_TARGET);
-	d3dUtil::Barrier(commandList, &historyA, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	barriers.clear();
+	if (d3dUtil::Barrier(&copyTexture, D3D12_RESOURCE_STATE_RENDER_TARGET, tempBarrier))
+	{
+		barriers.push_back(tempBarrier);
+	}
+	if (d3dUtil::Barrier(&historyA, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, tempBarrier))
+	{
+		barriers.push_back(tempBarrier);
+	}
+	if (!barriers.empty())
+	{
+		commandList->ResourceBarrier(static_cast<UINT>(barriers.size()), barriers.data());
+	}
 }
 
 void DX12App::BlurLightTexture()
@@ -511,7 +569,11 @@ void DX12App::BlurLightTexture()
 	commandList->SetComputeRootConstantBufferView(2, currentFrameResource->gaussianBlurBuffer->Resource()->GetGPUVirtualAddress());
 	commandList->Dispatch((clientWidth + 7) / 8, (clientHeight + 7) / 8, 1);
 
-	d3dUtil::Barrier(commandList, &renderSystem->history->GetTempBlurredTexture(), D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
+	CD3DX12_RESOURCE_BARRIER tempBlurBarrier;
+	if (d3dUtil::Barrier(&renderSystem->history->GetTempBlurredTexture(), D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE, tempBlurBarrier))
+	{
+		commandList->ResourceBarrier(1, &tempBlurBarrier);
+	}
 	commandList->SetComputeRootDescriptorTable(0, renderSystem->history->GetTempBlurredTexture().srvGpuHandle);
 	commandList->SetComputeRootDescriptorTable(1, renderSystem->history->GetCurrentBlurredTexture().uavGpuHandle);
 	blurConstants.direction[0] = 0;
@@ -519,7 +581,11 @@ void DX12App::BlurLightTexture()
 	currentFrameResource->gaussianBlurBuffer->CopyData(0, blurConstants);
 	commandList->SetComputeRootConstantBufferView(2, currentFrameResource->gaussianBlurBuffer->Resource()->GetGPUVirtualAddress());
 	commandList->Dispatch((clientWidth + 7) / 8, (clientHeight + 7) / 8, 1);
-	d3dUtil::Barrier(commandList, &renderSystem->history->GetCurrentBlurredTexture(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	CD3DX12_RESOURCE_BARRIER blurBarrier;
+	if (d3dUtil::Barrier(&renderSystem->history->GetCurrentBlurredTexture(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, blurBarrier))
+	{
+		commandList->ResourceBarrier(1, &blurBarrier);
+	}
 }
 
 

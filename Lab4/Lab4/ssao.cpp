@@ -165,17 +165,47 @@ void SSAO::ResetTextures() {
 
 void SSAO::ClearSSAO(ComPtr<ID3D12GraphicsCommandList> commandList)
 {
-	d3dUtil::Barrier(commandList, &SSAOTexture_A, D3D12_RESOURCE_STATE_RENDER_TARGET);
-	d3dUtil::Barrier(commandList, &SSAOTexture_B, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	std::vector<CD3DX12_RESOURCE_BARRIER> clearBarriers;
+	clearBarriers.reserve(2);
+
+	CD3DX12_RESOURCE_BARRIER tempBarrier;
+	if (d3dUtil::Barrier(&SSAOTexture_A, D3D12_RESOURCE_STATE_RENDER_TARGET, tempBarrier))
+	{
+		clearBarriers.push_back(tempBarrier);
+	}
+	if (d3dUtil::Barrier(&SSAOTexture_B, D3D12_RESOURCE_STATE_RENDER_TARGET, tempBarrier))
+	{
+		clearBarriers.push_back(tempBarrier);
+	}
+	if (!clearBarriers.empty())
+	{
+		commandList->ResourceBarrier(static_cast<UINT>(clearBarriers.size()), clearBarriers.data());
+	}
+
 	commandList->ClearRenderTargetView(SSAOTexture_A.rtvHandle, Color(0.0f, 0.0f, 0.0f, 1.0f), 0, nullptr);
 	commandList->ClearRenderTargetView(SSAOTexture_B.rtvHandle, Color(0.0f, 0.0f, 0.0f, 1.0f), 0, nullptr);
+
 	BarriersToDefault(commandList);
 }
 
 void SSAO::BarriersToDefault(ComPtr<ID3D12GraphicsCommandList> commandList)
 {
-	d3dUtil::Barrier(commandList, &SSAOTexture_A, D3D12_RESOURCE_STATE_RENDER_TARGET);
-	d3dUtil::Barrier(commandList, &SSAOTexture_B, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	std::vector<CD3DX12_RESOURCE_BARRIER> defaultBarriers;
+	defaultBarriers.reserve(2);
+
+	CD3DX12_RESOURCE_BARRIER tempBarrier;
+	if (d3dUtil::Barrier(&SSAOTexture_A, D3D12_RESOURCE_STATE_RENDER_TARGET, tempBarrier))
+	{
+		defaultBarriers.push_back(tempBarrier);
+	}
+	if (d3dUtil::Barrier(&SSAOTexture_B, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, tempBarrier))
+	{
+		defaultBarriers.push_back(tempBarrier);
+	}
+	if (!defaultBarriers.empty())
+	{
+		commandList->ResourceBarrier(static_cast<UINT>(defaultBarriers.size()), defaultBarriers.data());
+	}
 }
 
 void DX12App::DrawSSAO() {
