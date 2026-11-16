@@ -67,35 +67,19 @@ ID3D12DescriptorHeap* History::GetSamplerHeap()
 
 void History::LightBarrier(ComPtr<ID3D12GraphicsCommandList> commandList)
 {
-	std::vector<CD3DX12_RESOURCE_BARRIER> barriers;
-	barriers.reserve(1);
-
 	CD3DX12_RESOURCE_BARRIER tempBarrier;
-	if (d3dUtil::Barrier(&lightTexture, D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE, tempBarrier))
+	if (d3dUtil::SingleBarrier(&lightTexture, D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE, tempBarrier))
 	{
-		barriers.push_back(tempBarrier);
-	}
-
-	if (!barriers.empty())
-	{
-		commandList->ResourceBarrier(static_cast<UINT>(barriers.size()), barriers.data());
+		commandList->ResourceBarrier(1, &tempBarrier);
 	}
 }
 
 void History::MotionBarrier(ComPtr<ID3D12GraphicsCommandList> commandList)
 {
-	std::vector<CD3DX12_RESOURCE_BARRIER> barriers;
-	barriers.reserve(1);
-
 	CD3DX12_RESOURCE_BARRIER tempBarrier;
-	if (d3dUtil::Barrier(&motionTextureA, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, tempBarrier))
+	if (d3dUtil::SingleBarrier(&motionTextureA, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, tempBarrier))
 	{
-		barriers.push_back(tempBarrier);
-	}
-
-	if (!barriers.empty())
-	{
-		commandList->ResourceBarrier(static_cast<UINT>(barriers.size()), barriers.data());
+		commandList->ResourceBarrier(1, &tempBarrier);
 	}
 }
 
@@ -113,19 +97,8 @@ void History::ClearTextures(ComPtr<ID3D12GraphicsCommandList> commandList)
 {
 	std::vector<CD3DX12_RESOURCE_BARRIER> clearBarriers;
 	clearBarriers.reserve(2);
-
-	CD3DX12_RESOURCE_BARRIER tempBarrier;
-
-	if (d3dUtil::Barrier(&lightTexture, D3D12_RESOURCE_STATE_RENDER_TARGET, tempBarrier))
-	{
-		clearBarriers.push_back(tempBarrier);
-	}
-
-	if (d3dUtil::Barrier(&motionTextureA, D3D12_RESOURCE_STATE_RENDER_TARGET, tempBarrier))
-	{
-		clearBarriers.push_back(tempBarrier);
-	}
-
+	d3dUtil::AddBarrier(&lightTexture, D3D12_RESOURCE_STATE_RENDER_TARGET, clearBarriers);
+	d3dUtil::AddBarrier(&motionTextureA, D3D12_RESOURCE_STATE_RENDER_TARGET, clearBarriers);
 	if (!clearBarriers.empty())
 	{
 		commandList->ResourceBarrier(static_cast<UINT>(clearBarriers.size()), clearBarriers.data());
@@ -141,19 +114,8 @@ void History::DefaultBarriers(ComPtr<ID3D12GraphicsCommandList> commandList)
 {
 	std::vector<CD3DX12_RESOURCE_BARRIER> defaultBarriers;
 	defaultBarriers.reserve(2);
-
-	CD3DX12_RESOURCE_BARRIER tempBarrier;
-
-	if (d3dUtil::Barrier(&tempFrameBlurred, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, tempBarrier))
-	{
-		defaultBarriers.push_back(tempBarrier);
-	}
-
-	if (d3dUtil::Barrier(&currentFrameBlurred, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, tempBarrier))
-	{
-		defaultBarriers.push_back(tempBarrier);
-	}
-
+	d3dUtil::AddBarrier(&tempFrameBlurred, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, defaultBarriers);
+	d3dUtil::AddBarrier(&currentFrameBlurred, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, defaultBarriers);
 	if (!defaultBarriers.empty())
 	{
 		commandList->ResourceBarrier(static_cast<UINT>(defaultBarriers.size()), defaultBarriers.data());

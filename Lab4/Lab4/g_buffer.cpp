@@ -152,19 +152,9 @@ void GBuffer::TransitToOpaqueRenderingState(ComPtr<ID3D12GraphicsCommandList> co
 {
 	std::vector<CD3DX12_RESOURCE_BARRIER> barriers;
 	barriers.reserve(3);
-	CD3DX12_RESOURCE_BARRIER tempBarrier;
-	if (d3dUtil::Barrier(&diffuseTex, D3D12_RESOURCE_STATE_RENDER_TARGET, tempBarrier))
-	{
-		barriers.push_back(tempBarrier);
-	}
-	if (d3dUtil::Barrier(&normalTex, D3D12_RESOURCE_STATE_RENDER_TARGET, tempBarrier))
-	{
-		barriers.push_back(tempBarrier);
-	}
-	if (d3dUtil::Barrier(&depthTex, D3D12_RESOURCE_STATE_DEPTH_WRITE, tempBarrier))
-	{
-		barriers.push_back(tempBarrier);
-	}
+	d3dUtil::AddBarrier(&diffuseTex, D3D12_RESOURCE_STATE_RENDER_TARGET, barriers);
+	d3dUtil::AddBarrier(&normalTex, D3D12_RESOURCE_STATE_RENDER_TARGET, barriers);
+	d3dUtil::AddBarrier(&depthTex, D3D12_RESOURCE_STATE_DEPTH_WRITE, barriers);
 	if (!barriers.empty())
 	{
 		commandList->ResourceBarrier(static_cast<UINT>(barriers.size()), barriers.data());
@@ -175,19 +165,9 @@ void GBuffer::TransitToLightsRenderingState(ComPtr<ID3D12GraphicsCommandList> co
 {
 	std::vector<CD3DX12_RESOURCE_BARRIER> barriers;
 	barriers.reserve(3);
-	CD3DX12_RESOURCE_BARRIER tempBarrier;
-	if (d3dUtil::Barrier(&diffuseTex, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, tempBarrier))
-	{
-		barriers.push_back(tempBarrier);
-	}
-	if (d3dUtil::Barrier(&normalTex, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, tempBarrier))
-	{
-		barriers.push_back(tempBarrier);
-	}
-	if (d3dUtil::Barrier(&depthTex, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_DEPTH_READ, tempBarrier))
-	{
-		barriers.push_back(tempBarrier);
-	}
+	d3dUtil::AddBarrier(&diffuseTex, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, barriers);
+	d3dUtil::AddBarrier(&normalTex, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, barriers);
+	d3dUtil::AddBarrier(&depthTex, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_DEPTH_READ, barriers);
 	if (!barriers.empty())
 	{
 		commandList->ResourceBarrier(static_cast<UINT>(barriers.size()), barriers.data());

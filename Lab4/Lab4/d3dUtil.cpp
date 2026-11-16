@@ -77,7 +77,7 @@ DXGI_FORMAT d3dUtil::MakeSRGB(DXGI_FORMAT format)
 	}
 }
 
-bool d3dUtil::Barrier(MyTexture* texture, D3D12_RESOURCE_STATES newState, CD3DX12_RESOURCE_BARRIER& outBarrier)
+bool d3dUtil::SingleBarrier(MyTexture* texture, D3D12_RESOURCE_STATES newState, CD3DX12_RESOURCE_BARRIER& outBarrier)
 {
 	if (texture->currentState == newState)
 	{
@@ -89,16 +89,24 @@ bool d3dUtil::Barrier(MyTexture* texture, D3D12_RESOURCE_STATES newState, CD3DX1
 	return true;
 }
 
+void d3dUtil::AddBarrier(MyTexture* texture, D3D12_RESOURCE_STATES newState, std::vector<CD3DX12_RESOURCE_BARRIER>& vectorBarriers)
+{
+	if (texture->currentState == newState)
+	{
+		return;
+	}
+	CD3DX12_RESOURCE_BARRIER resourceBarrier = CD3DX12_RESOURCE_BARRIER::Transition(texture->Resource.Get(), texture->currentState, newState);
+	texture->currentState = newState;
+	vectorBarriers.push_back(resourceBarrier);
+}
+
 void d3dUtil::SwapTextures(ComPtr<ID3D12GraphicsCommandList> commandList, MyTexture*& writeTexture, MyTexture*& readTexture)
 {
 	std::swap(writeTexture, readTexture);
 	std::vector<CD3DX12_RESOURCE_BARRIER> barriers;
 	barriers.reserve(2);
-	CD3DX12_RESOURCE_BARRIER tempBarrier;
-	if (d3dUtil::Barrier(writeTexture, D3D12_RESOURCE_STATE_RENDER_TARGET, tempBarrier))
-	{
-		barriers.push_back(tempBarrier);
-	}
+	d3dUtil::AddBarrier(writeTexture, D3D12_RESOURCE_STATE_RENDER_TARGET, barriers);
+	d3dUtil::AddBarrier(readTexture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, barriers);
 	if (!barriers.empty())
 	{
 		commandList->ResourceBarrier(static_cast<UINT>(barriers.size()), barriers.data());

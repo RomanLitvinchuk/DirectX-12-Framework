@@ -165,24 +165,10 @@ void PostProcess::ClearPostProcess(ComPtr<ID3D12GraphicsCommandList> commandList
 {
 	std::vector<CD3DX12_RESOURCE_BARRIER> clearBarriers;
 	clearBarriers.reserve(4);
-
-	CD3DX12_RESOURCE_BARRIER tempBarrier;
-	if (d3dUtil::Barrier(&hdrTextureA, D3D12_RESOURCE_STATE_RENDER_TARGET, tempBarrier))
-	{
-		clearBarriers.push_back(tempBarrier);
-	}
-	if (d3dUtil::Barrier(&hdrTextureB, D3D12_RESOURCE_STATE_RENDER_TARGET, tempBarrier))
-	{
-		clearBarriers.push_back(tempBarrier);
-	}
-	if (d3dUtil::Barrier(&ldrTextureA, D3D12_RESOURCE_STATE_RENDER_TARGET, tempBarrier))
-	{
-		clearBarriers.push_back(tempBarrier);
-	}
-	if (d3dUtil::Barrier(&ldrTextureB, D3D12_RESOURCE_STATE_RENDER_TARGET, tempBarrier))
-	{
-		clearBarriers.push_back(tempBarrier);
-	}
+	d3dUtil::AddBarrier(&hdrTextureA, D3D12_RESOURCE_STATE_RENDER_TARGET, clearBarriers);
+	d3dUtil::AddBarrier(&hdrTextureB, D3D12_RESOURCE_STATE_RENDER_TARGET, clearBarriers);
+	d3dUtil::AddBarrier(&ldrTextureA, D3D12_RESOURCE_STATE_RENDER_TARGET, clearBarriers);
+	d3dUtil::AddBarrier(&ldrTextureB, D3D12_RESOURCE_STATE_RENDER_TARGET, clearBarriers);
 	if (!clearBarriers.empty())
 	{
 		commandList->ResourceBarrier(static_cast<UINT>(clearBarriers.size()), clearBarriers.data());
@@ -200,24 +186,10 @@ void PostProcess::BarriersToDefault(ComPtr<ID3D12GraphicsCommandList> commandLis
 {
 	std::vector<CD3DX12_RESOURCE_BARRIER> defaultBarriers;
 	defaultBarriers.reserve(4);
-
-	CD3DX12_RESOURCE_BARRIER tempBarrier;
-	if (d3dUtil::Barrier(&hdrTextureA, D3D12_RESOURCE_STATE_RENDER_TARGET, tempBarrier))
-	{
-		defaultBarriers.push_back(tempBarrier);
-	}
-	if (d3dUtil::Barrier(&hdrTextureB, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, tempBarrier))
-	{
-		defaultBarriers.push_back(tempBarrier);
-	}
-	if (d3dUtil::Barrier(&ldrTextureA, D3D12_RESOURCE_STATE_RENDER_TARGET, tempBarrier))
-	{
-		defaultBarriers.push_back(tempBarrier);
-	}
-	if (d3dUtil::Barrier(&ldrTextureB, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, tempBarrier))
-	{
-		defaultBarriers.push_back(tempBarrier);
-	}
+	d3dUtil::AddBarrier(&hdrTextureA, D3D12_RESOURCE_STATE_RENDER_TARGET, defaultBarriers);
+	d3dUtil::AddBarrier(&hdrTextureB, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, defaultBarriers);
+	d3dUtil::AddBarrier(&ldrTextureA, D3D12_RESOURCE_STATE_RENDER_TARGET, defaultBarriers);
+	d3dUtil::AddBarrier(&ldrTextureB, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, defaultBarriers);
 	if (!defaultBarriers.empty())
 	{
 		commandList->ResourceBarrier(static_cast<UINT>(defaultBarriers.size()), defaultBarriers.data());

@@ -24,7 +24,8 @@ public:
 		const std::string& entrypoint,
 		const std::string& target);
 	static DXGI_FORMAT MakeSRGB(DXGI_FORMAT format);
-	static bool Barrier(MyTexture* texture, D3D12_RESOURCE_STATES newState, CD3DX12_RESOURCE_BARRIER& outBarrier);
+	static bool SingleBarrier(MyTexture* texture, D3D12_RESOURCE_STATES newState, CD3DX12_RESOURCE_BARRIER& outBarrier);
+	static void AddBarrier(MyTexture* texture, D3D12_RESOURCE_STATES newState, std::vector<CD3DX12_RESOURCE_BARRIER>& vectorBarriers);
 	static void SwapTextures(ComPtr<ID3D12GraphicsCommandList> commandList, MyTexture*& writeTexture, MyTexture*& readTexture);
 private:
 };

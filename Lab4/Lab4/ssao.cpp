@@ -167,16 +167,8 @@ void SSAO::ClearSSAO(ComPtr<ID3D12GraphicsCommandList> commandList)
 {
 	std::vector<CD3DX12_RESOURCE_BARRIER> clearBarriers;
 	clearBarriers.reserve(2);
-
-	CD3DX12_RESOURCE_BARRIER tempBarrier;
-	if (d3dUtil::Barrier(&SSAOTexture_A, D3D12_RESOURCE_STATE_RENDER_TARGET, tempBarrier))
-	{
-		clearBarriers.push_back(tempBarrier);
-	}
-	if (d3dUtil::Barrier(&SSAOTexture_B, D3D12_RESOURCE_STATE_RENDER_TARGET, tempBarrier))
-	{
-		clearBarriers.push_back(tempBarrier);
-	}
+	d3dUtil::AddBarrier(&SSAOTexture_A, D3D12_RESOURCE_STATE_RENDER_TARGET, clearBarriers);
+	d3dUtil::AddBarrier(&SSAOTexture_B, D3D12_RESOURCE_STATE_RENDER_TARGET, clearBarriers);
 	if (!clearBarriers.empty())
 	{
 		commandList->ResourceBarrier(static_cast<UINT>(clearBarriers.size()), clearBarriers.data());
@@ -192,16 +184,8 @@ void SSAO::BarriersToDefault(ComPtr<ID3D12GraphicsCommandList> commandList)
 {
 	std::vector<CD3DX12_RESOURCE_BARRIER> defaultBarriers;
 	defaultBarriers.reserve(2);
-
-	CD3DX12_RESOURCE_BARRIER tempBarrier;
-	if (d3dUtil::Barrier(&SSAOTexture_A, D3D12_RESOURCE_STATE_RENDER_TARGET, tempBarrier))
-	{
-		defaultBarriers.push_back(tempBarrier);
-	}
-	if (d3dUtil::Barrier(&SSAOTexture_B, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, tempBarrier))
-	{
-		defaultBarriers.push_back(tempBarrier);
-	}
+	d3dUtil::AddBarrier(&SSAOTexture_A, D3D12_RESOURCE_STATE_RENDER_TARGET, defaultBarriers);
+	d3dUtil::AddBarrier(&SSAOTexture_B, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, defaultBarriers);
 	if (!defaultBarriers.empty())
 	{
 		commandList->ResourceBarrier(static_cast<UINT>(defaultBarriers.size()), defaultBarriers.data());
