@@ -22,6 +22,7 @@
 #include "input_handler.h"
 #include "frame_resource.h"
 #include "fsr_manager.h"
+#include "EJDescriptorHeap.h"
 
 
 using Microsoft::WRL::ComPtr;
@@ -181,7 +182,7 @@ private:
 	
 	ComPtr<IDXGISwapChain> swapChain = nullptr;
 
-	ComPtr<ID3D12DescriptorHeap> rtvHeap = nullptr;
+	EJDescriptorHeap rtvHeap;
 	ComPtr<ID3D12DescriptorHeap> dsvHeap = nullptr;
 	ComPtr<ID3D12DescriptorHeap> cbvSrvHeap = nullptr;
 	ComPtr<ID3D12DescriptorHeap> uavHeap = nullptr;
@@ -240,7 +241,7 @@ private:
 	ComPtr<ID3D12Resource> defaultTexture;
 	std::vector<std::string> materialNames;
 
-	RenderingSystem* renderSystem = nullptr;
+	std::unique_ptr<RenderingSystem> renderSystem = nullptr;
 
 	ComPtr<ID3D12Resource> sphereVertexBuffer = nullptr;
 	ComPtr<ID3D12Resource> sphereIndexBuffer = nullptr;

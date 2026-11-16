@@ -16,6 +16,7 @@
 #include "history.h"
 #include <unordered_map>
 #include <numeric>
+#include "rendering_system.h"
 
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
@@ -279,12 +280,13 @@ void DX12App::CreateSwapChain(HWND hWnd) {
 }
 
 void DX12App::CreateRTVAndDSVDescriptorHeaps() {
-	D3D12_DESCRIPTOR_HEAP_DESC RTVHeapDesc;
-	RTVHeapDesc.NumDescriptors = 4;
-	RTVHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-	RTVHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-	RTVHeapDesc.NodeMask = 0;
-	ThrowIfFailed(device->CreateDescriptorHeap(&RTVHeapDesc, IID_PPV_ARGS(&rtvHeap)));
+	//D3D12_DESCRIPTOR_HEAP_DESC RTVHeapDesc;
+	//RTVHeapDesc.NumDescriptors = 4;
+	//RTVHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+	//RTVHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	//RTVHeapDesc.NodeMask = 0;
+	//ThrowIfFailed(device->CreateDescriptorHeap(&RTVHeapDesc, IID_PPV_ARGS(&rtvHeap)));
+	rtvHeap.Create(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 50);
 	std::cout << "RTV heap is created" << std::endl;
 
 	D3D12_DESCRIPTOR_HEAP_DESC DSVHeapDesc;
@@ -298,7 +300,7 @@ void DX12App::CreateRTVAndDSVDescriptorHeaps() {
 
 
 D3D12_CPU_DESCRIPTOR_HANDLE DX12App::GetBackBuffer() const {
-	return CD3DX12_CPU_DESCRIPTOR_HANDLE(rtvHeap->GetCPUDescriptorHandleForHeapStart(), currentBackBuffer, rtvDescriptorSize);
+	return CD3DX12_CPU_DESCRIPTOR_HANDLE(rtvHeap->GetCPUDescriptorHandleForHeapStart(), currentBackBuffer, device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV));
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE DX12App::GetDSV() const {
@@ -311,16 +313,16 @@ ID3D12Resource* DX12App::CurrentBackBuffer() const {
 
 
 void DX12App::CreateRTV() {
-	CD3DX12_CPU_DESCRIPTOR_HANDLE RTV_heap_handle_(rtvHeap->GetCPUDescriptorHandleForHeapStart());
+	
 
 	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
 	rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 	rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 
 	for (UINT i = 0; i < 2; i++) {
+		CD3DX12_CPU_DESCRIPTOR_HANDLE RTV_heap_handle_(rtvHeap.GetFreeCPUHandle());
 		ThrowIfFailed(swapChain->GetBuffer(i, IID_PPV_ARGS(&swapChainBuffer[i])));
 		device->CreateRenderTargetView(swapChainBuffer[i].Get(), &rtvDesc, RTV_heap_handle_);
-		RTV_heap_handle_.Offset(1, rtvDescriptorSize);
 	}
 	std::cout << "RTV is created" << std::endl;
 }
@@ -459,7 +461,7 @@ void DX12App::InitRenderSystem() {
 	if (iter != sceneData.textures.end()) {
 		noiseTexResource = iter->second->Resource.Get();
 	}
-	renderSystem = new RenderingSystem(clientWidth, clientHeight, noiseTexResource);
+	renderSystem = std::make_unique<RenderingSystem>(clientWidth, clientHeight, noiseTexResource, &rtvHeap);
 
 	CreateStructuredBuffersSRV();
 }
@@ -531,9 +533,9 @@ void DX12App::OnResize() {
 	ThrowIfFailed(commandList->Reset(currentFrameResource->cmdListAlloc.Get(), nullptr));
 	swapChainBuffer[0].Reset();
 	swapChainBuffer[1].Reset();
-
 	ThrowIfFailed(swapChain->ResizeBuffers(2, clientWidth, clientHeight, backBufferFormat, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH));
 
+	rtvHeap.Reset();
 	InitProjectionMatrix();
 	currentBackBuffer = 0;
 	CreateRTV();

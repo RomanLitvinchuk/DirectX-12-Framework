@@ -28,6 +28,12 @@
     <Filter Include="Исходные файлы\FSR">
       <UniqueIdentifier>{c942e0e6-3db6-4095-8286-279ffa79f2fa}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Файлы заголовков\Allocators">
+      <UniqueIdentifier>{3b3443f3-1138-4a63-98d1-d0e768d2d678}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Исходные файлы\Allocators">
+      <UniqueIdentifier>{b7824f43-fe3c-4f8d-9121-1b47b4483d9e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="winmain.cpp">
@@ -140,6 +146,9 @@
     </ClCompile>
     <ClCompile Include="fsr_manager.cpp">
       <Filter>Исходные файлы\FSR</Filter>
+    </ClCompile>
+    <ClCompile Include="EJDescriptorHeap.cpp">
+      <Filter>Исходные файлы\Allocators</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -277,6 +286,9 @@
     </ClInclude>
     <ClInclude Include="fsr_manager.h">
       <Filter>Файлы заголовков\FSR</Filter>
+    </ClInclude>
+    <ClInclude Include="EJDescriptorHeap.h">
+      <Filter>Файлы заголовков\Allocators</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

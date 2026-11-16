@@ -10,6 +10,7 @@ class GBuffer;
 class PostProcess;
 class SSAO;
 class History;
+class EJDescriptorHeap;
 
 using Microsoft::WRL::ComPtr;
 using namespace DirectX::SimpleMath;
@@ -70,14 +71,15 @@ public:
 	std::unique_ptr<PostProcess> postProcess = nullptr;
 	std::unique_ptr<SSAO> ssao = nullptr;
 	std::unique_ptr<History> history = nullptr;
+	EJDescriptorHeap* rtvHeap = nullptr;
 
 	bool bVignette = true;
 
 	std::vector<LightConstants> sceneLights;
 	ComPtr<ID3D12DescriptorHeap> samplerHeap = nullptr;
 
-	RenderingSystem(int width, int height, ID3D12Resource* noiseTexture);
-
+	RenderingSystem(int width, int height, ID3D12Resource* noiseTexture, EJDescriptorHeap* rtvHeap);
+	~RenderingSystem();
 private:
 	ComPtr<ID3D12Device> device = nullptr;
 
