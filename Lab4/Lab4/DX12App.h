@@ -68,6 +68,7 @@ public:
 	}
 
 	bool keyStates[256] = { false };
+	bool bIsResizing = false;
 
 	int GetClientWidth() { return clientWidth; }
 	int GetClientHeight() { return clientHeight; }
@@ -182,7 +183,7 @@ private:
 	
 	ComPtr<IDXGISwapChain> swapChain = nullptr;
 
-	EJDescriptorHeap rtvHeap;
+	EJDescriptorHeaps heaps;
 	ComPtr<ID3D12DescriptorHeap> dsvHeap = nullptr;
 	ComPtr<ID3D12DescriptorHeap> cbvSrvHeap = nullptr;
 	ComPtr<ID3D12DescriptorHeap> uavHeap = nullptr;

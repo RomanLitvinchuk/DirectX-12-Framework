@@ -5,13 +5,15 @@
 
 using Microsoft::WRL::ComPtr;
 
+struct EJDescriptorHeaps;
+
 class SSAO {
 private:
 	MyTexture SSAOTexture_A;
 	MyTexture SSAOTexture_B;
 	ComPtr<ID3D12DescriptorHeap> srvHeap = nullptr;
 	ComPtr<ID3D12DescriptorHeap> samplerHeap = nullptr;
-	ComPtr<ID3D12DescriptorHeap> rtvHeap = nullptr;
+	EJDescriptorHeaps* heaps = nullptr;
 
 	ComPtr<ID3D12Device> device = nullptr;
 
@@ -24,7 +26,7 @@ private:
 	void BarriersToDefault(ComPtr<ID3D12GraphicsCommandList> commandList);
 	void ResetTextures();
 public:
-	SSAO(int width, int height, ID3D12Resource* depthTexture, ID3D12Resource* normalTexture, ID3D12Resource* noiseTexture);
+	SSAO(int width, int height, ID3D12Resource* depthTexture, ID3D12Resource* normalTexture, ID3D12Resource* noiseTexture, EJDescriptorHeaps* heaps);
 	void OnResize(int width, int height, ID3D12Resource* depthTexture, ID3D12Resource* normalTexture, ID3D12Resource* noiseTexture);
 	void ClearSSAO(ComPtr<ID3D12GraphicsCommandList> commandList);
 
@@ -32,7 +34,7 @@ public:
 	MyTexture& GetTextureB();
 	ComPtr<ID3D12DescriptorHeap> GetSrvHeap();
 	ComPtr<ID3D12DescriptorHeap> GetSamplerHeap();
-	ComPtr<ID3D12DescriptorHeap> GetRtvHeap();
+	ID3D12DescriptorHeap* GetRtvHeap();
 };
 
 struct SsaoConstants

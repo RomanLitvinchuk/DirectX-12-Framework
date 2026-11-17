@@ -3,7 +3,7 @@
 #include <wrl.h>
 #include "texture.h"
 
-class EJDescriptorHeap;
+struct EJDescriptorHeaps;
 
 using Microsoft::WRL::ComPtr;
 
@@ -13,7 +13,7 @@ public:
 	void ClearPostProcess(ComPtr<ID3D12GraphicsCommandList> commandList);
 	void OnResize(int width, int height);
 
-	PostProcess(int width, int height, EJDescriptorHeap* rtvHeap);
+	PostProcess(int width, int height, EJDescriptorHeaps* heaps);
 
 	MyTexture& GetHdrTextureA();
 	MyTexture& GetHdrTextureB();
@@ -30,7 +30,7 @@ private:
 	MyTexture ldrTextureB;
 	//MyTexture fsrOutput;
 	ComPtr<ID3D12DescriptorHeap> srvHeap;
-	EJDescriptorHeap* rtvHeap = nullptr;
+	EJDescriptorHeaps* heaps = nullptr;
 
 	ComPtr<ID3D12Device> device = nullptr;
 

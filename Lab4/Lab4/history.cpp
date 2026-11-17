@@ -3,8 +3,9 @@
 #include "throw_if_failed.h"
 #include "d3dx12.h"
 #include "d3dUtil.h"
+#include "EJDescriptorHeap.h"
 
-History::History(int screenWidth, int screenHeight)
+History::History(int screenWidth, int screenHeight, EJDescriptorHeaps* heaps) : heaps(heaps)
 {
 	device = SingletonDevice::GetDevice();
 	CreateDescriptorHeaps();
@@ -63,6 +64,11 @@ ID3D12DescriptorHeap* History::GetSrvHeap()
 ID3D12DescriptorHeap* History::GetSamplerHeap()
 {
 	return samplerHeap.Get();
+}
+
+ID3D12DescriptorHeap* History::GetRtvHeap()
+{
+	return heaps->rtvHeap.Get();
 }
 
 void History::LightBarrier(ComPtr<ID3D12GraphicsCommandList> commandList)
@@ -131,11 +137,6 @@ void History::CreateDescriptorHeaps()
 	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	ThrowIfFailed(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&srvHeap)));
 
-	heapDesc.NumDescriptors = 5;
-	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-	ThrowIfFailed(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&rtvHeap)));
-
 	heapDesc.NumDescriptors = 2;
 	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
 	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
@@ -166,7 +167,7 @@ void History::CreateTextures(int screenWidth, int screenHeight)
 	currentFrameBlurred.currentState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
 
 	ThrowIfFailed(device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resDesc, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, nullptr, IID_PPV_ARGS(&tempFrameBlurred.Resource)));
-	tempFrameBlurred.Resource->SetName(L"Temporal Frame Blured");
+	tempFrameBlurred.Resource->SetName(L"Temporal Frame Blurred");
 	tempFrameBlurred.currentState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
 
 	resDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
@@ -231,9 +232,10 @@ void History::CreateSRV()
 
 void History::CreateRTV()
 {
+	auto& rtvHeap = heaps->rtvHeap;
 	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
 	auto rtvIncSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(rtvHeap->GetCPUDescriptorHandleForHeapStart());
+	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(rtvHeap.GetFreeCPUHandle());
 	rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 	rtvDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
 	rtvDesc.Texture2D.MipSlice = 0;
@@ -241,16 +243,16 @@ void History::CreateRTV()
 	historyA.rtvHandle = rtvHandle;
 	device->CreateRenderTargetView(historyA.Resource.Get(), &rtvDesc, rtvHandle);
 
-	rtvHandle.Offset(1, rtvIncSize);
+	rtvHandle = rtvHeap.GetFreeCPUHandle();
 	lightTexture.rtvHandle = rtvHandle;
 	device->CreateRenderTargetView(lightTexture.Resource.Get(), &rtvDesc, rtvHandle);
 
-	rtvHandle.Offset(1, rtvIncSize);
+	rtvHandle = rtvHeap.GetFreeCPUHandle();
 	motionTextureA.rtvHandle = rtvHandle;
 	rtvDesc.Format = DXGI_FORMAT_R16G16_FLOAT;
 	device->CreateRenderTargetView(motionTextureA.Resource.Get(), &rtvDesc, rtvHandle);
 
-	rtvHandle.Offset(1, rtvIncSize);
+	rtvHandle = rtvHeap.GetFreeCPUHandle();
 	motionTextureB.rtvHandle = rtvHandle;
 	device->CreateRenderTargetView(motionTextureB.Resource.Get(), &rtvDesc, rtvHandle);
 }

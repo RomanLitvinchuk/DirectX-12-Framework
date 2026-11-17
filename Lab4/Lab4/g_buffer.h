@@ -5,6 +5,8 @@
 
 using Microsoft::WRL::ComPtr;
 
+struct EJDescriptorHeaps;
+
 class GBuffer {
 private:
 
@@ -12,7 +14,7 @@ private:
 	MyTexture normalTex;
 	MyTexture depthTex;
 
-	ComPtr<ID3D12DescriptorHeap> rtvDescpritorHeap;
+	EJDescriptorHeaps* heaps;
 	ComPtr<ID3D12DescriptorHeap> srvDescriptorHeap;
 	ComPtr<ID3D12DescriptorHeap> dsvDescriptorHeap;
 
@@ -25,7 +27,7 @@ private:
 	void ResetTextures();
 public:
 
-	GBuffer(int width, int height);
+	GBuffer(int width, int height, EJDescriptorHeaps* heaps);
 
 	void TransitToOpaqueRenderingState(ComPtr<ID3D12GraphicsCommandList> commandList);
 	void TransitToLightsRenderingState(ComPtr<ID3D12GraphicsCommandList> commandList);
@@ -37,6 +39,6 @@ public:
 	MyTexture& GetNormalTex();
 	MyTexture& GetDepthTex();
 	ComPtr<ID3D12DescriptorHeap> GetSrvHeap();
-	ComPtr<ID3D12DescriptorHeap> GetRtvHeap();
+	ID3D12DescriptorHeap* GetRtvHeap();
 	ComPtr<ID3D12DescriptorHeap> GetDsvHeap();
 };

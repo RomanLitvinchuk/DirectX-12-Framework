@@ -12,6 +12,24 @@ void EJDescriptorHeap::Create(D3D12_DESCRIPTOR_HEAP_TYPE heapType, uint32_t desc
 	heapDesc.NodeMask = 0;
 	ThrowIfFailed(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&heap)));
 	cpuOffset = 0;
+	switch (heapType)
+	{
+		case D3D12_DESCRIPTOR_HEAP_TYPE_RTV:
+			heap->SetName(L"RTV Heap");
+			break;
+		case D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV:
+			heap->SetName(L"CBV SRV UAV Heap");
+			break;
+		case D3D12_DESCRIPTOR_HEAP_TYPE_DSV:
+			heap->SetName(L"DSV Heap");
+			break;
+		case D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER:
+			heap->SetName(L"Sampler Heap");
+			break;
+		default:
+			heap->SetName(L"Unknown Heap");
+			break;
+	}
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE EJDescriptorHeap::GetFreeCPUHandle() 

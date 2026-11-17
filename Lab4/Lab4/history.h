@@ -6,12 +6,12 @@
 
 using Microsoft::WRL::ComPtr;
 
-struct MyTexture;
+struct EJDescriptorHeaps;
 
 class History 
 {
 public:
-	History(int screenWidth, int screenHeight);
+	History(int screenWidth, int screenHeight, EJDescriptorHeaps* heaps);
 
 	void OnResize(int screenWidt, int screenHeight);
 	MyTexture& GetHistoryA();
@@ -22,6 +22,7 @@ public:
 	MyTexture& GetMotionTextureB();
 	ID3D12DescriptorHeap* GetSrvHeap();
 	ID3D12DescriptorHeap* GetSamplerHeap();
+	ID3D12DescriptorHeap* GetRtvHeap();
 	void LightBarrier(ComPtr<ID3D12GraphicsCommandList> commandList);
 	void MotionBarrier(ComPtr<ID3D12GraphicsCommandList> commandList);
 	void ClearTextures(ComPtr<ID3D12GraphicsCommandList> commandList);
@@ -33,7 +34,7 @@ private:
 	MyTexture motionTextureA;
 	MyTexture motionTextureB;
 	ComPtr<ID3D12DescriptorHeap> srvHeap;
-	ComPtr<ID3D12DescriptorHeap> rtvHeap;
+	EJDescriptorHeaps* heaps;
 	ComPtr<ID3D12DescriptorHeap> samplerHeap;
 	ComPtr<ID3D12Device> device = nullptr;
 

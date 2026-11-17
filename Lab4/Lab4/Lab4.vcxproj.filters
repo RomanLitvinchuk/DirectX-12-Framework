@@ -28,11 +28,11 @@
     <Filter Include="Исходные файлы\FSR">
       <UniqueIdentifier>{c942e0e6-3db6-4095-8286-279ffa79f2fa}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Файлы заголовков\Allocators">
-      <UniqueIdentifier>{3b3443f3-1138-4a63-98d1-d0e768d2d678}</UniqueIdentifier>
+    <Filter Include="Файлы заголовков\Wrappers">
+      <UniqueIdentifier>{35d4b1c3-a3ba-4e97-9fd9-0fda4b20bd4c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Исходные файлы\Allocators">
-      <UniqueIdentifier>{b7824f43-fe3c-4f8d-9121-1b47b4483d9e}</UniqueIdentifier>
+    <Filter Include="Исходные файлы\Wrappers">
+      <UniqueIdentifier>{3ba3d35a-9f91-4a4f-9af5-7c104ae11144}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -147,8 +147,8 @@
     <ClCompile Include="fsr_manager.cpp">
       <Filter>Исходные файлы\FSR</Filter>
     </ClCompile>
-    <ClCompile Include="EJDescriptorHeap.cpp">
-      <Filter>Исходные файлы\Allocators</Filter>
+    <ClCompile Include="Wrappers\EJDescriptorHeap.cpp">
+      <Filter>Исходные файлы\Wrappers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -287,8 +287,8 @@
     <ClInclude Include="fsr_manager.h">
       <Filter>Файлы заголовков\FSR</Filter>
     </ClInclude>
-    <ClInclude Include="EJDescriptorHeap.h">
-      <Filter>Файлы заголовков\Allocators</Filter>
+    <ClInclude Include="Wrappers\EJDescriptorHeap.h">
+      <Filter>Файлы заголовков\Wrappers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

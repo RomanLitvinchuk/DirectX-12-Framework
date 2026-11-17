@@ -880,7 +880,7 @@ void RenderingSystem::CreatePPOutputPSO()
 	ThrowIfFailed(device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&ppOutputPSO)));
 }
 
-RenderingSystem::RenderingSystem(int width, int height, ID3D12Resource* noiseTexture, EJDescriptorHeap* rtvHeap) {
+RenderingSystem::RenderingSystem(int width, int height, ID3D12Resource* noiseTexture, EJDescriptorHeaps* heaps) {
 	device = SingletonDevice::GetDevice();
 	BuildLayouts();
 	CreateOpaqueRS();
@@ -917,11 +917,11 @@ RenderingSystem::RenderingSystem(int width, int height, ID3D12Resource* noiseTex
 	CreateBillboardRS();
 	CreateBillboardPSO();
 
-	gBuffer = std::make_unique<GBuffer>(width, height);
-	postProcess = std::make_unique<PostProcess>(width, height, rtvHeap);
-	ssao = std::make_unique<SSAO>(width / 2, height / 2, gBuffer->GetDepthTex().Resource.Get(), gBuffer->GetNormalTex().Resource.Get(), noiseTexture);
-	history = std::make_unique<History>(width, height);
-	this->rtvHeap = rtvHeap;
+	gBuffer = std::make_unique<GBuffer>(width, height, heaps);
+	postProcess = std::make_unique<PostProcess>(width, height, heaps);
+	ssao = std::make_unique<SSAO>(width / 2, height / 2, gBuffer->GetDepthTex().Resource.Get(), gBuffer->GetNormalTex().Resource.Get(), noiseTexture, heaps);
+	history = std::make_unique<History>(width, height, heaps);
+	this->heaps = heaps;
 
 	LightConstants sun = {};
 	sun.lightType = 0; // Directional

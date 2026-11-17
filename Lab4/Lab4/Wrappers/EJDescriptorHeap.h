@@ -35,3 +35,10 @@ private:
 	uint32_t cpuOffset = 0;
 	uint32_t gpuOffset = 0;
 };
+
+struct EJDescriptorHeaps
+{
+	EJDescriptorHeap rtvHeap;
+	EJDescriptorHeap srvHeap;
+	EJDescriptorHeap dsvHeap;
+};

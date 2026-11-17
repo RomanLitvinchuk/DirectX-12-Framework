@@ -5,7 +5,7 @@
 #include "d3dx12.h"
 #include "EJDescriptorHeap.h"
 
-PostProcess::PostProcess(int width, int height, EJDescriptorHeap* rtvHeap) : rtvHeap(rtvHeap)
+PostProcess::PostProcess(int width, int height, EJDescriptorHeaps* heaps) : heaps(heaps)
 {
 	device = SingletonDevice::GetDevice();
 	CreateHeaps();
@@ -42,7 +42,7 @@ ComPtr<ID3D12DescriptorHeap> PostProcess::GetSrvHeap()
 
 ID3D12DescriptorHeap* PostProcess::GetRtvHeap() 
 {
-	return rtvHeap->Get();
+	return heaps->rtvHeap.Get();
 }
 
 void PostProcess::CreateHeaps() 
@@ -118,25 +118,26 @@ void PostProcess::CreateSRV()
 
 void PostProcess::CreateRTV()
 {
+	EJDescriptorHeap& rtvHeap = heaps->rtvHeap;
 	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
 	rtvDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
 	rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 	rtvDesc.Texture2D.MipSlice = 0;
 	rtvDesc.Texture2D.PlaneSlice = 0;
-	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(rtvHeap->GetFreeCPUHandle());
+	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(rtvHeap.GetFreeCPUHandle());
 	auto rtvSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	hdrTextureA.rtvHandle = rtvHandle;
 	device->CreateRenderTargetView(hdrTextureA.Resource.Get(), &rtvDesc, rtvHandle);
 
-	rtvHandle = rtvHeap->GetFreeCPUHandle();
+	rtvHandle = rtvHeap.GetFreeCPUHandle();
 	hdrTextureB.rtvHandle = rtvHandle;
 	device->CreateRenderTargetView(hdrTextureB.Resource.Get(), &rtvDesc, rtvHandle);
 
 	rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	rtvHandle = rtvHeap->GetFreeCPUHandle();
+	rtvHandle = rtvHeap.GetFreeCPUHandle();
 	ldrTextureA.rtvHandle = rtvHandle;
 	device->CreateRenderTargetView(ldrTextureA.Resource.Get(), &rtvDesc, rtvHandle);
-	rtvHandle = rtvHeap->GetFreeCPUHandle();
+	rtvHandle = rtvHeap.GetFreeCPUHandle();
 	ldrTextureB.rtvHandle = rtvHandle;
 	device->CreateRenderTargetView(ldrTextureB.Resource.Get(), &rtvDesc, rtvHandle);
 }

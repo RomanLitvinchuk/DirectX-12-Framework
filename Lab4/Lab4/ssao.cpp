@@ -2,8 +2,10 @@
 #include "DX12App.h"
 #include "throw_if_failed.h"
 #include "singletone_device.h"
+#include "EJDescriptorHeap.h"
 
-SSAO::SSAO(int width, int height, ID3D12Resource* depthTexture, ID3D12Resource* normalTexture, ID3D12Resource* noiseTexture) {
+SSAO::SSAO(int width, int height, ID3D12Resource* depthTexture, ID3D12Resource* normalTexture, ID3D12Resource* noiseTexture, EJDescriptorHeaps* heaps) : heaps(heaps)
+{
 	device = SingletonDevice::GetDevice();
 	CreateHeaps();
 	CreateTexture(width, height);
@@ -32,9 +34,9 @@ ComPtr<ID3D12DescriptorHeap> SSAO::GetSamplerHeap()
 	return samplerHeap;
 }
 
-ComPtr<ID3D12DescriptorHeap> SSAO::GetRtvHeap() 
+ID3D12DescriptorHeap* SSAO::GetRtvHeap() 
 {
-	return rtvHeap;
+	return heaps->rtvHeap.Get();
 }
 
 void SSAO::CreateHeaps() {
@@ -44,13 +46,6 @@ void SSAO::CreateHeaps() {
 	srvHeapDesc.NumDescriptors = 5;
 	srvHeapDesc.NodeMask = 0;
 	ThrowIfFailed(device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&srvHeap)));
-
-	D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
-	rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-	rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-	rtvHeapDesc.NumDescriptors = 2;
-	rtvHeapDesc.NodeMask = 0;
-	ThrowIfFailed(device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&rtvHeap)));
 
 	D3D12_DESCRIPTOR_HEAP_DESC samplerDesc;
 	samplerDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
@@ -79,17 +74,17 @@ void SSAO::CreateTexture(int width, int height) {
 }
 
 void SSAO::CreateRTV() {
-	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(rtvHeap->GetCPUDescriptorHandleForHeapStart());
-	auto rtvSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+	auto& rtvHeap = heaps->rtvHeap;
 	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
 	rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 	rtvDesc.Format = DXGI_FORMAT_R32_FLOAT;
 	rtvDesc.Texture2D.MipSlice = 0;
 	rtvDesc.Texture2D.PlaneSlice = 0;
+	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(rtvHeap.GetFreeCPUHandle());
 	SSAOTexture_A.rtvHandle = handle;
 	device->CreateRenderTargetView(SSAOTexture_A.Resource.Get(), &rtvDesc, handle);
 
-	handle.Offset(1, rtvSize);
+	handle = rtvHeap.GetFreeCPUHandle();
 	SSAOTexture_B.rtvHandle = handle;
 	device->CreateRenderTargetView(SSAOTexture_B.Resource.Get(), &rtvDesc, handle);
 }

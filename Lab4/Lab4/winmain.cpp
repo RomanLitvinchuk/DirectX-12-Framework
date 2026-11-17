@@ -66,6 +66,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
         if (raw->header.dwType == RIM_TYPEMOUSE)
         {
+			if (MyFramework.bIsResizing)
+			{
+				delete[] lpb;
+				break;
+			}
+
             short dx = raw->data.mouse.lLastX;
             short dy = raw->data.mouse.lLastY;
 
@@ -106,6 +112,19 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         delete[] lpb;
         break;
     }
+
+	case WM_ENTERSIZEMOVE:
+	{
+		MyFramework.bIsResizing = true;
+		MyFramework.OnMouseUp();
+		break;
+	}
+
+	case WM_EXITSIZEMOVE:
+	{
+		MyFramework.bIsResizing = false;
+		break;
+	}
 
     case WM_SIZE:
     {

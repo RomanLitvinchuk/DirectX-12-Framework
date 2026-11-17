@@ -2,9 +2,9 @@
 #include "DX12App.h"
 #include "singletone_device.h"
 #include "throw_if_failed.h"
-#include <DirectXColors.h>
+#include "EJDescriptorHeap.h"
 
-GBuffer::GBuffer(int width, int height) 
+GBuffer::GBuffer(int width, int height, EJDescriptorHeaps* heaps) : heaps(heaps)
 {
 	device = SingletonDevice::GetDevice();
 	CreateHeaps();
@@ -33,9 +33,9 @@ ComPtr<ID3D12DescriptorHeap> GBuffer::GetSrvHeap()
 	return srvDescriptorHeap;
 }
 
-ComPtr<ID3D12DescriptorHeap> GBuffer::GetRtvHeap() 
+ID3D12DescriptorHeap* GBuffer::GetRtvHeap() 
 {
-	return rtvDescpritorHeap;
+	return heaps->rtvHeap.Get();
 }
 
 ComPtr<ID3D12DescriptorHeap> GBuffer::GetDsvHeap() 
@@ -46,12 +46,6 @@ ComPtr<ID3D12DescriptorHeap> GBuffer::GetDsvHeap()
 
 void GBuffer::CreateHeaps()
 {
-	D3D12_DESCRIPTOR_HEAP_DESC rtvDesc = {};
-	rtvDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-	rtvDesc.NumDescriptors = 5;
-	rtvDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-	ThrowIfFailed(device->CreateDescriptorHeap(&rtvDesc, IID_PPV_ARGS(&rtvDescpritorHeap)));
-
 	D3D12_DESCRIPTOR_HEAP_DESC srvDesc = {};
 	srvDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	srvDesc.NumDescriptors = 6;
@@ -101,17 +95,18 @@ void GBuffer::CreateTextures(int width, int height)
 
 void GBuffer::CreateRTVandDSV() 
 {
+	auto& rtvHeap = heaps->rtvHeap;
 	D3D12_RENDER_TARGET_VIEW_DESC rtvTexDesc = {};
 	rtvTexDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	rtvTexDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 	rtvTexDesc.Texture2D.MipSlice = 0;
 	rtvTexDesc.Texture2D.PlaneSlice = 0;
 	auto RtvIncSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(rtvDescpritorHeap->GetCPUDescriptorHandleForHeapStart());
+	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(rtvHeap.GetFreeCPUHandle());
 	diffuseTex.rtvHandle = rtvHandle;
 	device->CreateRenderTargetView(diffuseTex.Resource.Get(), &rtvTexDesc, diffuseTex.rtvHandle);
 	rtvTexDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
-	rtvHandle.Offset(1, RtvIncSize);
+	rtvHandle = rtvHeap.GetFreeCPUHandle();
 	normalTex.rtvHandle = rtvHandle;
 	device->CreateRenderTargetView(normalTex.Resource.Get(), &rtvTexDesc, normalTex.rtvHandle);
 
