@@ -146,7 +146,7 @@
     <ClCompile Include="deffered_rendering.cpp" />
     <ClCompile Include="DX12App.cpp" />
     <ClCompile Include="frame_resource.cpp" />
-    <ClCompile Include="fsr_manager.cpp" />
+    <ClCompile Include="FSR\fsr_manager.cpp" />
     <ClCompile Include="game_timer.cpp" />
     <ClCompile Include="g_buffer.cpp" />
     <ClCompile Include="history.cpp" />
@@ -186,7 +186,7 @@
     <ClInclude Include="FSR\ffx_api_loader.h" />
     <ClInclude Include="FSR\ffx_api_types.h" />
     <ClInclude Include="FSR\ffx_upscale.h" />
-    <ClInclude Include="fsr_manager.h" />
+    <ClInclude Include="FSR\fsr_manager.h" />
     <ClInclude Include="game_timer.h" />
     <ClInclude Include="g_buffer.h" />
     <ClInclude Include="history.h" />
@@ -221,6 +221,7 @@
     <ClInclude Include="viewport_constants.h" />
     <ClInclude Include="window_class.h" />
     <ClInclude Include="Wrappers\EJDescriptorHeap.h" />
+    <ClInclude Include="Wrappers\EJTexture.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -1,6 +1,8 @@
 #include "DX12App.h"
 #include "history.h"
 #include "imgui.h"
+#include "post_process.h"
+#include "EJTexture.h"
 
 #define ALIGN_256(size) ((size + 255) & ~255)
 
@@ -27,8 +29,8 @@ void DX12App::Draw()
 	renderSystem->history->ClearTextures(commandList);
 
 
-	MyTexture* ppWriteTexture = &renderSystem->postProcess->GetHdrTextureA();
-	MyTexture* ppReadTexture = &renderSystem->postProcess->GetHdrTextureB();
+	EJTexture* ppWriteTexture = &renderSystem->postProcess->GetHdrTextureA();
+	EJTexture* ppReadTexture = &renderSystem->postProcess->GetHdrTextureB();
 
 	bIsTreeVisible = false;
 
@@ -492,7 +494,7 @@ void DX12App::DrawNYBalls()
 	commandList->DrawIndexedInstanced(sphereIndexCount, 500, 0, 0, 0);
 }
 
-void DX12App::InitHistoryTextureFromCurrentFrame(MyTexture& copyTexture)
+void DX12App::InitHistoryTextureFromCurrentFrame(EJTexture& copyTexture)
 {
 	auto& historyA = renderSystem->history->GetHistoryA();
 

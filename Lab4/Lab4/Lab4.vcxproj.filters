@@ -144,11 +144,11 @@
     <ClCompile Include="imgui\imgui_widgets.cpp">
       <Filter>Исходные файлы\ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="fsr_manager.cpp">
-      <Filter>Исходные файлы\FSR</Filter>
-    </ClCompile>
     <ClCompile Include="Wrappers\EJDescriptorHeap.cpp">
       <Filter>Исходные файлы\Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="FSR\fsr_manager.cpp">
+      <Filter>Исходные файлы\FSR</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -284,10 +284,13 @@
     <ClInclude Include="FSR\ffx_upscale.h">
       <Filter>Файлы заголовков\FSR</Filter>
     </ClInclude>
-    <ClInclude Include="fsr_manager.h">
+    <ClInclude Include="Wrappers\EJDescriptorHeap.h">
+      <Filter>Файлы заголовков\Wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="FSR\fsr_manager.h">
       <Filter>Файлы заголовков\FSR</Filter>
     </ClInclude>
-    <ClInclude Include="Wrappers\EJDescriptorHeap.h">
+    <ClInclude Include="Wrappers\EJTexture.h">
       <Filter>Файлы заголовков\Wrappers</Filter>
     </ClInclude>
   </ItemGroup>

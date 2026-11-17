@@ -1,7 +1,7 @@
 #pragma once
 #include <d3d12.h>
 #include <wrl.h>
-#include "texture.h"
+#include "EJTexture.h"
 
 using Microsoft::WRL::ComPtr;
 
@@ -9,8 +9,8 @@ struct EJDescriptorHeaps;
 
 class SSAO {
 private:
-	MyTexture SSAOTexture_A;
-	MyTexture SSAOTexture_B;
+	EJTexture SSAOTexture_A;
+	EJTexture SSAOTexture_B;
 	ComPtr<ID3D12DescriptorHeap> srvHeap = nullptr;
 	ComPtr<ID3D12DescriptorHeap> samplerHeap = nullptr;
 	EJDescriptorHeaps* heaps = nullptr;
@@ -30,8 +30,8 @@ public:
 	void OnResize(int width, int height, ID3D12Resource* depthTexture, ID3D12Resource* normalTexture, ID3D12Resource* noiseTexture);
 	void ClearSSAO(ComPtr<ID3D12GraphicsCommandList> commandList);
 
-	MyTexture& GetTextureA();
-	MyTexture& GetTextureB();
+	EJTexture& GetTextureA();
+	EJTexture& GetTextureB();
 	ComPtr<ID3D12DescriptorHeap> GetSrvHeap();
 	ComPtr<ID3D12DescriptorHeap> GetSamplerHeap();
 	ID3D12DescriptorHeap* GetRtvHeap();

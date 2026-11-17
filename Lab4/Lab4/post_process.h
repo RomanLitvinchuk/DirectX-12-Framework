@@ -1,7 +1,7 @@
 #pragma once
 #include <d3d12.h>
 #include <wrl.h>
-#include "texture.h"
+#include "EJTexture.h"
 
 struct EJDescriptorHeaps;
 
@@ -15,19 +15,19 @@ public:
 
 	PostProcess(int width, int height, EJDescriptorHeaps* heaps);
 
-	MyTexture& GetHdrTextureA();
-	MyTexture& GetHdrTextureB();
-	MyTexture& GetLdrTextureA();
-	MyTexture& GetLdrTextureB();
+	EJTexture& GetHdrTextureA();
+	EJTexture& GetHdrTextureB();
+	EJTexture& GetLdrTextureA();
+	EJTexture& GetLdrTextureB();
 	//MyTexture& GetFsrOutput();
 	ComPtr<ID3D12DescriptorHeap> GetSrvHeap();
 	ID3D12DescriptorHeap* GetRtvHeap();
 
 private:
-	MyTexture hdrTextureA;
-	MyTexture hdrTextureB;
-	MyTexture ldrTextureA;
-	MyTexture ldrTextureB;
+	EJTexture hdrTextureA;
+	EJTexture hdrTextureB;
+	EJTexture ldrTextureA;
+	EJTexture ldrTextureB;
 	//MyTexture fsrOutput;
 	ComPtr<ID3D12DescriptorHeap> srvHeap;
 	EJDescriptorHeaps* heaps = nullptr;

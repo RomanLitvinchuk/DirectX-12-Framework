@@ -95,9 +95,9 @@ private:
 	void ComputeParticles();
 	void EmitParticles();
 	void InitEmitter();
-	void DrawPPTonemap(MyTexture* readHDR);
-	void DrawPPVignette(MyTexture* readLDR, MyTexture* writeLDR);
-	void DrawPPOutput(MyTexture* readLDR);
+	void DrawPPTonemap(EJTexture* readHDR);
+	void DrawPPVignette(EJTexture* readLDR, EJTexture* writeLDR);
+	void DrawPPOutput(EJTexture* readLDR);
 
 	void BlurLightTexture();
 
@@ -153,7 +153,7 @@ private:
 
 
 
-	void InitHistoryTextureFromCurrentFrame(MyTexture& copyTexture);
+	void InitHistoryTextureFromCurrentFrame(EJTexture& copyTexture);
 
 	void InitImGui(HWND hwnd);
 	void RenderImGui();

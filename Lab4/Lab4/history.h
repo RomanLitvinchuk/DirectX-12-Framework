@@ -2,7 +2,7 @@
 #include <memory>
 #include <wrl.h>
 #include "d3d12.h"
-#include "texture.h"
+#include "EJTexture.h"
 
 using Microsoft::WRL::ComPtr;
 
@@ -14,12 +14,12 @@ public:
 	History(int screenWidth, int screenHeight, EJDescriptorHeaps* heaps);
 
 	void OnResize(int screenWidt, int screenHeight);
-	MyTexture& GetHistoryA();
-	MyTexture& GetLightTexture();
-	MyTexture& GetCurrentBlurredTexture();
-	MyTexture& GetTempBlurredTexture();
-	MyTexture& GetMotionTextureA();
-	MyTexture& GetMotionTextureB();
+	EJTexture& GetHistoryA();
+	EJTexture& GetLightTexture();
+	EJTexture& GetCurrentBlurredTexture();
+	EJTexture& GetTempBlurredTexture();
+	EJTexture& GetMotionTextureA();
+	EJTexture& GetMotionTextureB();
 	ID3D12DescriptorHeap* GetSrvHeap();
 	ID3D12DescriptorHeap* GetSamplerHeap();
 	ID3D12DescriptorHeap* GetRtvHeap();
@@ -27,12 +27,12 @@ public:
 	void MotionBarrier(ComPtr<ID3D12GraphicsCommandList> commandList);
 	void ClearTextures(ComPtr<ID3D12GraphicsCommandList> commandList);
 private:
-	MyTexture historyA;
-	MyTexture lightTexture;
-	MyTexture currentFrameBlurred;
-	MyTexture tempFrameBlurred;
-	MyTexture motionTextureA;
-	MyTexture motionTextureB;
+	EJTexture historyA;
+	EJTexture lightTexture;
+	EJTexture currentFrameBlurred;
+	EJTexture tempFrameBlurred;
+	EJTexture motionTextureA;
+	EJTexture motionTextureB;
 	ComPtr<ID3D12DescriptorHeap> srvHeap;
 	EJDescriptorHeaps* heaps;
 	ComPtr<ID3D12DescriptorHeap> samplerHeap;

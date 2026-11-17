@@ -15,22 +15,22 @@ PostProcess::PostProcess(int width, int height, EJDescriptorHeaps* heaps) : heap
 	CreateUAV();
 }
 
-MyTexture& PostProcess::GetHdrTextureA() 
+EJTexture& PostProcess::GetHdrTextureA() 
 {
 	return hdrTextureA;
 }
 
-MyTexture& PostProcess::GetHdrTextureB() 
+EJTexture& PostProcess::GetHdrTextureB() 
 {
 	return hdrTextureB;
 }
 
-MyTexture& PostProcess::GetLdrTextureA() 
+EJTexture& PostProcess::GetLdrTextureA() 
 {
 	return ldrTextureA;
 }
 
-MyTexture& PostProcess::GetLdrTextureB() 
+EJTexture& PostProcess::GetLdrTextureB() 
 {
 	return ldrTextureB;
 }

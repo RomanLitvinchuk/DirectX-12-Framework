@@ -13,17 +13,17 @@ GBuffer::GBuffer(int width, int height, EJDescriptorHeaps* heaps) : heaps(heaps)
 	CreateRTVandDSV();
 };
 
-MyTexture& GBuffer::GetDiffuseTex() 
+EJTexture& GBuffer::GetDiffuseTex() 
 {
 	return diffuseTex;
 }
 
-MyTexture& GBuffer::GetNormalTex() 
+EJTexture& GBuffer::GetNormalTex() 
 {
 	return normalTex;
 }
 
-MyTexture& GBuffer::GetDepthTex() 
+EJTexture& GBuffer::GetDepthTex() 
 {
 	return depthTex;
 }

@@ -1,5 +1,6 @@
 #include "DX12App.h"
 #include "history.h"
+#include "post_process.h"
 
 void DX12App::DrawWireframe()
 {

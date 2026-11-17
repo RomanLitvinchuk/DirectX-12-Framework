@@ -14,12 +14,12 @@ SSAO::SSAO(int width, int height, ID3D12Resource* depthTexture, ID3D12Resource* 
 	CreateSamplers();
 }
 
-MyTexture& SSAO::GetTextureA() 
+EJTexture& SSAO::GetTextureA() 
 {
 	return SSAOTexture_A;
 }
 
-MyTexture& SSAO::GetTextureB() 
+EJTexture& SSAO::GetTextureB() 
 {
 	return SSAOTexture_B;
 }
@@ -226,8 +226,8 @@ void DX12App::DrawSSAO() {
 
 void DX12App::BlurSSAO()
 {
-	MyTexture* ssaoWriteTexture = &renderSystem->ssao->GetTextureA();
-	MyTexture* ssaoReadTexture = &renderSystem->ssao->GetTextureB();
+	EJTexture* ssaoWriteTexture = &renderSystem->ssao->GetTextureA();
+	EJTexture* ssaoReadTexture = &renderSystem->ssao->GetTextureB();
 
 	d3dUtil::SwapTextures(commandList, ssaoWriteTexture, ssaoReadTexture);
 

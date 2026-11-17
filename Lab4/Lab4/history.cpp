@@ -26,32 +26,32 @@ void History::OnResize(int screenWidth, int screenHeight)
 	CreateUAV();
 }
 
-MyTexture& History::GetHistoryA()
+EJTexture& History::GetHistoryA()
 {
 	return historyA; 
 }
 
-MyTexture& History::GetLightTexture()
+EJTexture& History::GetLightTexture()
 {
 	return lightTexture;
 }
 
-MyTexture& History::GetCurrentBlurredTexture()
+EJTexture& History::GetCurrentBlurredTexture()
 {
 	return currentFrameBlurred;
 }
 
-MyTexture& History::GetTempBlurredTexture()
+EJTexture& History::GetTempBlurredTexture()
 {
 	return tempFrameBlurred;
 }
 
-MyTexture& History::GetMotionTextureA()
+EJTexture& History::GetMotionTextureA()
 {
 	return motionTextureA;
 }
 
-MyTexture& History::GetMotionTextureB()
+EJTexture& History::GetMotionTextureB()
 {
 	return motionTextureB;
 }

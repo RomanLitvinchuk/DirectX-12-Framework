@@ -1,9 +1,7 @@
 #include "d3dUtil.h"
 #include <d3dx12.h>
 #include "throw_if_failed.h"
-#include "vertex.h"
-#include <DirectXColors.h>
-#include <iostream>
+#include "EJTexture.h"
 #include <d3dcompiler.h>
 
 ComPtr<ID3D12Resource> d3dUtil::CreateDefaultBuffer(ID3D12Device* device, ID3D12GraphicsCommandList* CmdList,
@@ -77,7 +75,7 @@ DXGI_FORMAT d3dUtil::MakeSRGB(DXGI_FORMAT format)
 	}
 }
 
-bool d3dUtil::SingleBarrier(MyTexture* texture, D3D12_RESOURCE_STATES newState, CD3DX12_RESOURCE_BARRIER& outBarrier)
+bool d3dUtil::SingleBarrier(EJTexture* texture, D3D12_RESOURCE_STATES newState, CD3DX12_RESOURCE_BARRIER& outBarrier)
 {
 	if (texture->currentState == newState)
 	{
@@ -89,7 +87,7 @@ bool d3dUtil::SingleBarrier(MyTexture* texture, D3D12_RESOURCE_STATES newState, 
 	return true;
 }
 
-void d3dUtil::AddBarrier(MyTexture* texture, D3D12_RESOURCE_STATES newState, std::vector<CD3DX12_RESOURCE_BARRIER>& vectorBarriers)
+void d3dUtil::AddBarrier(EJTexture* texture, D3D12_RESOURCE_STATES newState, std::vector<CD3DX12_RESOURCE_BARRIER>& vectorBarriers)
 {
 	if (texture->currentState == newState)
 	{
@@ -100,7 +98,7 @@ void d3dUtil::AddBarrier(MyTexture* texture, D3D12_RESOURCE_STATES newState, std
 	vectorBarriers.push_back(resourceBarrier);
 }
 
-void d3dUtil::SwapTextures(ComPtr<ID3D12GraphicsCommandList> commandList, MyTexture*& writeTexture, MyTexture*& readTexture)
+void d3dUtil::SwapTextures(ComPtr<ID3D12GraphicsCommandList> commandList, EJTexture*& writeTexture, EJTexture*& readTexture)
 {
 	std::swap(writeTexture, readTexture);
 	std::vector<CD3DX12_RESOURCE_BARRIER> barriers;

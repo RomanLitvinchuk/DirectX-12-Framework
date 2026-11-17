@@ -1,7 +1,8 @@
 #include "DX12App.h"
 #include "DirectXColors.h"
+#include "post_process.h"
 
-void DX12App::DrawPPTonemap(MyTexture* readHDR) {
+void DX12App::DrawPPTonemap(EJTexture* readHDR) {
 	commandList->SetPipelineState(renderSystem->ppTonemappingPSO.Get());
 	commandList->SetGraphicsRootSignature(renderSystem->ppDefaultRS.Get());
 
@@ -19,7 +20,7 @@ void DX12App::DrawPPTonemap(MyTexture* readHDR) {
 	commandList->DrawInstanced(3, 1, 0, 0);
 }
 
-void DX12App::DrawPPVignette(MyTexture* readLDR, MyTexture* writeLDR)
+void DX12App::DrawPPVignette(EJTexture* readLDR, EJTexture* writeLDR)
 {
 	commandList->SetPipelineState(renderSystem->ppVignettePSO.Get());
 	commandList->SetGraphicsRootSignature(renderSystem->ppDefaultRS.Get());
@@ -37,7 +38,7 @@ void DX12App::DrawPPVignette(MyTexture* readLDR, MyTexture* writeLDR)
 	commandList->DrawInstanced(3, 1, 0, 0);
 }
 
-void DX12App::DrawPPOutput(MyTexture* readLDR)
+void DX12App::DrawPPOutput(EJTexture* readLDR)
 {
 	commandList->SetPipelineState(renderSystem->ppOutputPSO.Get());
 	commandList->SetGraphicsRootSignature(renderSystem->ppDefaultRS.Get());

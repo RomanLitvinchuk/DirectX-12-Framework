@@ -1,7 +1,7 @@
 #pragma once
 #include <d3d12.h>
 #include <wrl.h>
-#include "texture.h"
+#include "EJTexture.h"
 
 using Microsoft::WRL::ComPtr;
 
@@ -10,9 +10,9 @@ struct EJDescriptorHeaps;
 class GBuffer {
 private:
 
-	MyTexture diffuseTex;
-	MyTexture normalTex;
-	MyTexture depthTex;
+	EJTexture diffuseTex;
+	EJTexture normalTex;
+	EJTexture depthTex;
 
 	EJDescriptorHeaps* heaps;
 	ComPtr<ID3D12DescriptorHeap> srvDescriptorHeap;
@@ -35,9 +35,9 @@ public:
 	void OnResize(int width, int height);
 	void ClearGBuffer(ComPtr<ID3D12GraphicsCommandList> commandList);
 
-	MyTexture& GetDiffuseTex();
-	MyTexture& GetNormalTex();
-	MyTexture& GetDepthTex();
+	EJTexture& GetDiffuseTex();
+	EJTexture& GetNormalTex();
+	EJTexture& GetDepthTex();
 	ComPtr<ID3D12DescriptorHeap> GetSrvHeap();
 	ID3D12DescriptorHeap* GetRtvHeap();
 	ComPtr<ID3D12DescriptorHeap> GetDsvHeap();

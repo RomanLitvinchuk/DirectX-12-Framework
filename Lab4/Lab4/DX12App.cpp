@@ -17,6 +17,8 @@
 #include <unordered_map>
 #include <numeric>
 #include "rendering_system.h"
+#include "EJTexture.h"
+#include "post_process.h"
 
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
