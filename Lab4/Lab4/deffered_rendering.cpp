@@ -13,7 +13,6 @@ void DX12App::Draw()
 	//=====================================================
 
 	frameIndex++;
-	WaitForCurrentFrameResource();
 	ThrowIfFailed(currentFrameResource->cmdListAlloc->Reset());
 	ThrowIfFailed(commandList->Reset(currentFrameResource->cmdListAlloc.Get(), renderSystem->opaquePSO.Get()));
 	SortLODs();
@@ -180,12 +179,11 @@ void DX12App::Draw()
 	ID3D12CommandList* cmdsLists[] = { commandList.Get() };
 	commandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
+	currentFrameResource->Fence = ++currentFence;
+	commandQueue->Signal(fence.Get(), currentFence);
+
 	ThrowIfFailed(swapChain->Present(0, 0));
 	currentBackBuffer = (currentBackBuffer + 1) % 2;
-
-	currentFence++;
-	currentFrameResource->Fence = currentFence;
-	ThrowIfFailed(commandQueue->Signal(fence.Get(), currentFence));
 }
 
 

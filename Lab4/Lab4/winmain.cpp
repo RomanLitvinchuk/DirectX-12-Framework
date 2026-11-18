@@ -220,7 +220,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 
 	wnd.WRun(&MyFramework.GetTimer());
 
-    MyFramework.ShutdownImGui();
+    MyFramework.Shutdown();
 
 	return 0;
 }

@@ -11,6 +11,7 @@ void DX12App::OnMouseUp() {
 void DX12App::Update() {
 	float dt = gt.DeltaTime();
 	float speed = camera.mCameraSpeed * dt;
+	WaitForCurrentFrameResource();
 
 	UpdatePrevMatricesData();
 

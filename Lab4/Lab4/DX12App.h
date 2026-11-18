@@ -40,7 +40,7 @@ public:
 	void Update();
 	void NewImGuiFrame();
 	void BuildImGui();
-	void ShutdownImGui();
+	void Shutdown();
 
 	Camera& GetCamera()
 	{ 
@@ -160,6 +160,8 @@ private:
 	void FlushCommandQueue();
 
 	void InitFSR();
+
+	void ShutdownImGui();
 
 	GameTimer gt;
 	InputHandler inputHandler;

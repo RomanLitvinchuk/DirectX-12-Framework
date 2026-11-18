@@ -161,6 +161,21 @@ void DX12App::ShutdownImGui() {
 	imGuiSrvHeap.Reset();
 }
 
+void DX12App::Shutdown()
+{
+	currentFence++;
+	ThrowIfFailed(commandQueue->Signal(fence.Get(), currentFence));
+	if (fence->GetCompletedValue() < currentFence)
+	{
+		HANDLE eventHandle = CreateEventEx(nullptr, nullptr, false, EVENT_ALL_ACCESS);
+		ThrowIfFailed(fence->SetEventOnCompletion(currentFence, eventHandle));
+		WaitForSingleObject(eventHandle, INFINITE);
+		CloseHandle(eventHandle);
+	}
+	ShutdownImGui();
+	fsr.Unload();
+}
+
 void DX12App::Init(HWND hWnd)
 {
 	InitializeDevice();
