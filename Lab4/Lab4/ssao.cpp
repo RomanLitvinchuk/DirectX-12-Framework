@@ -80,11 +80,11 @@ void SSAO::CreateRTV() {
 	rtvDesc.Format = DXGI_FORMAT_R32_FLOAT;
 	rtvDesc.Texture2D.MipSlice = 0;
 	rtvDesc.Texture2D.PlaneSlice = 0;
-	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(rtvHeap.GetFreeCPUHandle());
+	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(rtvHeap.GetFreeHandles().first);
 	SSAOTexture_A.rtvHandle = handle;
 	device->CreateRenderTargetView(SSAOTexture_A.Resource.Get(), &rtvDesc, handle);
 
-	handle = rtvHeap.GetFreeCPUHandle();
+	handle = rtvHeap.GetFreeHandles().first;
 	SSAOTexture_B.rtvHandle = handle;
 	device->CreateRenderTargetView(SSAOTexture_B.Resource.Get(), &rtvDesc, handle);
 }

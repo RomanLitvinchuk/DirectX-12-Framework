@@ -16,7 +16,6 @@ private:
 
 	EJDescriptorHeaps* heaps;
 	ComPtr<ID3D12DescriptorHeap> srvDescriptorHeap;
-	ComPtr<ID3D12DescriptorHeap> dsvDescriptorHeap;
 
 	ComPtr<ID3D12Device> device = nullptr;
 
@@ -40,5 +39,5 @@ public:
 	EJTexture& GetDepthTex();
 	ComPtr<ID3D12DescriptorHeap> GetSrvHeap();
 	ID3D12DescriptorHeap* GetRtvHeap();
-	ComPtr<ID3D12DescriptorHeap> GetDsvHeap();
+	ID3D12DescriptorHeap* GetDsvHeap();
 };

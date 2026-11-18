@@ -171,7 +171,6 @@ void DX12App::Init(HWND hWnd)
 
 	CreateRTVAndDSVDescriptorHeaps();
 	CreateRTV();
-	CreateDSV();
 
 	LoadTextures();
 
@@ -282,31 +281,13 @@ void DX12App::CreateSwapChain(HWND hWnd) {
 }
 
 void DX12App::CreateRTVAndDSVDescriptorHeaps() {
-	//D3D12_DESCRIPTOR_HEAP_DESC RTVHeapDesc;
-	//RTVHeapDesc.NumDescriptors = 4;
-	//RTVHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-	//RTVHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-	//RTVHeapDesc.NodeMask = 0;
-	//ThrowIfFailed(device->CreateDescriptorHeap(&RTVHeapDesc, IID_PPV_ARGS(&rtvHeap)));
 	heaps.rtvHeap.Create(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 50);
-	std::cout << "RTV heap is created" << std::endl;
-
-	D3D12_DESCRIPTOR_HEAP_DESC DSVHeapDesc;
-	DSVHeapDesc.NumDescriptors = 4;
-	DSVHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-	DSVHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-	DSVHeapDesc.NodeMask = 0;
-	ThrowIfFailed(device->CreateDescriptorHeap(&DSVHeapDesc, IID_PPV_ARGS(&dsvHeap)));
-	std::cout << "DSV heap is created" << std::endl;
+	heaps.dsvHeap.Create(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 10);
 }
 
 
 D3D12_CPU_DESCRIPTOR_HANDLE DX12App::GetBackBuffer() const {
 	return CD3DX12_CPU_DESCRIPTOR_HANDLE(heaps.rtvHeap->GetCPUDescriptorHandleForHeapStart(), currentBackBuffer, device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV));
-}
-
-D3D12_CPU_DESCRIPTOR_HANDLE DX12App::GetDSV() const {
-	return dsvHeap->GetCPUDescriptorHandleForHeapStart();
 }
 
 ID3D12Resource* DX12App::CurrentBackBuffer() const {
@@ -322,37 +303,12 @@ void DX12App::CreateRTV() {
 	rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 
 	for (UINT i = 0; i < 2; i++) {
-		CD3DX12_CPU_DESCRIPTOR_HANDLE RTV_heap_handle_(heaps.rtvHeap.GetFreeCPUHandle());
+		CD3DX12_CPU_DESCRIPTOR_HANDLE RTV_heap_handle_(heaps.rtvHeap.GetFreeHandles().first);
 		ThrowIfFailed(swapChain->GetBuffer(i, IID_PPV_ARGS(&swapChainBuffer[i])));
 		device->CreateRenderTargetView(swapChainBuffer[i].Get(), &rtvDesc, RTV_heap_handle_);
 	}
 	std::cout << "RTV is created" << std::endl;
 }
-
-void DX12App::CreateDSV() {
-	D3D12_RESOURCE_DESC dsDesc;
-	dsDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-	dsDesc.Alignment = 0;
-	dsDesc.Width = clientWidth;
-	dsDesc.Height = clientHeight;
-	dsDesc.DepthOrArraySize = 1;
-	dsDesc.MipLevels = 1;
-	dsDesc.Format = depthStencilFormat;
-	dsDesc.SampleDesc.Count = 1;
-	dsDesc.SampleDesc.Quality = 0;
-	dsDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-	dsDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-
-	D3D12_CLEAR_VALUE clrValue;
-	clrValue.Format = depthStencilFormat;
-	clrValue.DepthStencil.Depth = 1.0f;
-	clrValue.DepthStencil.Stencil = 0;
-	CD3DX12_HEAP_PROPERTIES heapProperties(D3D12_HEAP_TYPE_DEFAULT);
-	ThrowIfFailed(device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &dsDesc, D3D12_RESOURCE_STATE_DEPTH_WRITE, &clrValue, IID_PPV_ARGS(&dsvBuffer)));
-	std::cout << "DSV is created" << std::endl;
-	device->CreateDepthStencilView(dsvBuffer.Get(), nullptr, GetDSV());
-}
-
 
 
 void DX12App::CreateSamplerHeap() {
@@ -538,10 +494,10 @@ void DX12App::OnResize() {
 	ThrowIfFailed(swapChain->ResizeBuffers(2, clientWidth, clientHeight, backBufferFormat, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH));
 
 	heaps.rtvHeap.Reset();
+	heaps.dsvHeap.Reset();
 	InitProjectionMatrix();
 	currentBackBuffer = 0;
 	CreateRTV();
-	CreateDSV();
 	renderSystem->gBuffer->OnResize(clientWidth, clientHeight);
 	renderSystem->postProcess->OnResize(clientWidth, clientHeight);
 	renderSystem->history->OnResize(clientWidth, clientHeight);
@@ -638,11 +594,7 @@ void DX12App::InitShadowMap() {
 	auto gpuHandle = renderSystem->gBuffer->GetSrvHeap()->GetGPUDescriptorHandleForHeapStart();
 	CD3DX12_GPU_DESCRIPTOR_HANDLE smGpuHandle(gpuHandle, 4, size);
 
-	auto dsvHandle = dsvHeap->GetCPUDescriptorHandleForHeapStart();
-	size = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
-	CD3DX12_CPU_DESCRIPTOR_HANDLE smDsvHandle(dsvHandle, 1, size);
-
-	shadowMap->BuildDescriptors(smHandle, smGpuHandle, smDsvHandle);
+	shadowMap->BuildDescriptors(smHandle, smGpuHandle, &heaps);
 }
 
 void DX12App::InitFrameResources()

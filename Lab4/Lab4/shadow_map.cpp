@@ -1,6 +1,7 @@
 #include "shadow_map.h"
 #include "throw_if_failed.h"
 #include "singletone_device.h"
+#include "EJDescriptorHeap.h"
 
 ShadowMap::ShadowMap(UINT initWidth, UINT initHeight)
 {
@@ -69,15 +70,15 @@ D3D12_RECT ShadowMap::ScissorRect() const
     return scissorRect;
 }
 
-void ShadowMap::BuildDescriptors(CD3DX12_CPU_DESCRIPTOR_HANDLE hCpuSrv, CD3DX12_GPU_DESCRIPTOR_HANDLE hGpuSrv, CD3DX12_CPU_DESCRIPTOR_HANDLE hCpuDsv)
+void ShadowMap::BuildDescriptors(CD3DX12_CPU_DESCRIPTOR_HANDLE hCpuSrv, CD3DX12_GPU_DESCRIPTOR_HANDLE hGpuSrv, EJDescriptorHeaps* heaps)
 {
     srvCpuHandle = hCpuSrv;
     srvGpuHandle = hGpuSrv;
     UINT dsvDescriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 
     for (int i = 0; i < NUM_CASCADES; ++i) {
-        dsvCpuHandle[i] = hCpuDsv;
-        hCpuDsv.Offset(1, dsvDescriptorSize);
+        D3D12_CPU_DESCRIPTOR_HANDLE cpuDsvhandle = heaps->dsvHeap.GetFreeHandles(true).first;
+        dsvCpuHandle[i] = cpuDsvhandle;
     }
 
     BuildDescriptors();

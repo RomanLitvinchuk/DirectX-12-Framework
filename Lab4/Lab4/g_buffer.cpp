@@ -38,9 +38,9 @@ ID3D12DescriptorHeap* GBuffer::GetRtvHeap()
 	return heaps->rtvHeap.Get();
 }
 
-ComPtr<ID3D12DescriptorHeap> GBuffer::GetDsvHeap() 
+ID3D12DescriptorHeap* GBuffer::GetDsvHeap() 
 {
-	return dsvDescriptorHeap;
+	return heaps->dsvHeap.Get();
 }
 
 
@@ -51,13 +51,6 @@ void GBuffer::CreateHeaps()
 	srvDesc.NumDescriptors = 6;
 	srvDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	ThrowIfFailed(device->CreateDescriptorHeap(&srvDesc, IID_PPV_ARGS(&srvDescriptorHeap)));
-
-	D3D12_DESCRIPTOR_HEAP_DESC dsvDesc = {};
-	dsvDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-	dsvDesc.NumDescriptors = 1;
-	dsvDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-
-	ThrowIfFailed(device->CreateDescriptorHeap(&dsvDesc, IID_PPV_ARGS(&dsvDescriptorHeap)));
 }
 
 void GBuffer::CreateTextures(int width, int height) 
@@ -87,10 +80,10 @@ void GBuffer::CreateTextures(int width, int height)
 	clearValue.DepthStencil.Stencil = 0;
 	resDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;
 	resDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-	ThrowIfFailed(device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resDesc, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_DEPTH_READ,
+	ThrowIfFailed(device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resDesc, D3D12_RESOURCE_STATE_DEPTH_WRITE,
 		&clearValue, IID_PPV_ARGS(&depthTex.Resource)));
 	depthTex.Resource->SetName(L"Depth texture");
-	depthTex.currentState = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_DEPTH_READ;
+	depthTex.currentState = D3D12_RESOURCE_STATE_DEPTH_WRITE;
 }
 
 void GBuffer::CreateRTVandDSV() 
@@ -102,11 +95,11 @@ void GBuffer::CreateRTVandDSV()
 	rtvTexDesc.Texture2D.MipSlice = 0;
 	rtvTexDesc.Texture2D.PlaneSlice = 0;
 	auto RtvIncSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(rtvHeap.GetFreeCPUHandle());
+	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(rtvHeap.GetFreeHandles().first);
 	diffuseTex.rtvHandle = rtvHandle;
 	device->CreateRenderTargetView(diffuseTex.Resource.Get(), &rtvTexDesc, diffuseTex.rtvHandle);
 	rtvTexDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
-	rtvHandle = rtvHeap.GetFreeCPUHandle();
+	rtvHandle = rtvHeap.GetFreeHandles().first;
 	normalTex.rtvHandle = rtvHandle;
 	device->CreateRenderTargetView(normalTex.Resource.Get(), &rtvTexDesc, normalTex.rtvHandle);
 
@@ -115,7 +108,7 @@ void GBuffer::CreateRTVandDSV()
 	dsvTexDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 	dsvTexDesc.Texture2D.MipSlice = 0;
 	auto DsvIncSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
-	CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+	CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(heaps->dsvHeap.GetFreeHandles().first);
 	depthTex.dsvHandle = dsvHandle;
 	device->CreateDepthStencilView(depthTex.Resource.Get(), &dsvTexDesc, depthTex.dsvHandle);
 }

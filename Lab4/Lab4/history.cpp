@@ -235,7 +235,7 @@ void History::CreateRTV()
 	auto& rtvHeap = heaps->rtvHeap;
 	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
 	auto rtvIncSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(rtvHeap.GetFreeCPUHandle());
+	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(rtvHeap.GetFreeHandles().first);
 	rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 	rtvDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
 	rtvDesc.Texture2D.MipSlice = 0;
@@ -243,16 +243,16 @@ void History::CreateRTV()
 	historyA.rtvHandle = rtvHandle;
 	device->CreateRenderTargetView(historyA.Resource.Get(), &rtvDesc, rtvHandle);
 
-	rtvHandle = rtvHeap.GetFreeCPUHandle();
+	rtvHandle = rtvHeap.GetFreeHandles().first;
 	lightTexture.rtvHandle = rtvHandle;
 	device->CreateRenderTargetView(lightTexture.Resource.Get(), &rtvDesc, rtvHandle);
 
-	rtvHandle = rtvHeap.GetFreeCPUHandle();
+	rtvHandle = rtvHeap.GetFreeHandles().first;
 	motionTextureA.rtvHandle = rtvHandle;
 	rtvDesc.Format = DXGI_FORMAT_R16G16_FLOAT;
 	device->CreateRenderTargetView(motionTextureA.Resource.Get(), &rtvDesc, rtvHandle);
 
-	rtvHandle = rtvHeap.GetFreeCPUHandle();
+	rtvHandle = rtvHeap.GetFreeHandles().first;
 	motionTextureB.rtvHandle = rtvHandle;
 	device->CreateRenderTargetView(motionTextureB.Resource.Get(), &rtvDesc, rtvHandle);
 }

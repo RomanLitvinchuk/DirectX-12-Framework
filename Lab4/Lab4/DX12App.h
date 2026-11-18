@@ -59,7 +59,6 @@ public:
 
 	D3D12_CPU_DESCRIPTOR_HANDLE GetBackBuffer() const;
 	ID3D12Resource* CurrentBackBuffer() const;
-	D3D12_CPU_DESCRIPTOR_HANDLE GetDSV() const;
 
 	void SetClientWH(int newWidth, int newHeight) 
 	{
@@ -121,7 +120,6 @@ private:
 	void CreateRTVAndDSVDescriptorHeaps();
 	void CreateCBVDescriptorHeap();
 	void CreateRTV();
-	void CreateDSV();
 	void LoadTextures();
 	void CreateSRV();
 	void CreateSamplerHeap();
@@ -184,7 +182,6 @@ private:
 	ComPtr<IDXGISwapChain> swapChain = nullptr;
 
 	EJDescriptorHeaps heaps;
-	ComPtr<ID3D12DescriptorHeap> dsvHeap = nullptr;
 	ComPtr<ID3D12DescriptorHeap> cbvSrvHeap = nullptr;
 	ComPtr<ID3D12DescriptorHeap> uavHeap = nullptr;
 	ComPtr<ID3D12DescriptorHeap> samplerHeap = nullptr;

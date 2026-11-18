@@ -7,11 +7,13 @@ void EJDescriptorHeap::Create(D3D12_DESCRIPTOR_HEAP_TYPE heapType, uint32_t desc
 	device = SingletonDevice::GetDevice();
 	D3D12_DESCRIPTOR_HEAP_DESC heapDesc;
 	heapDesc.Type = heapType;
+	this->heapType = heapType;
 	heapDesc.NumDescriptors = descriptorsCount;
 	heapDesc.Flags = (heapType == D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	heapDesc.NodeMask = 0;
 	ThrowIfFailed(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&heap)));
-	cpuOffset = 0;
+	offset = 0;
+	staticsResources.assign(descriptorsCount, false);
 	switch (heapType)
 	{
 		case D3D12_DESCRIPTOR_HEAP_TYPE_RTV:
@@ -32,18 +34,24 @@ void EJDescriptorHeap::Create(D3D12_DESCRIPTOR_HEAP_TYPE heapType, uint32_t desc
 	}
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE EJDescriptorHeap::GetFreeCPUHandle() 
+std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> EJDescriptorHeap::GetFreeHandles(const bool bIsResizable) 
 {
-	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(heap->GetCPUDescriptorHandleForHeapStart());
-	handle.Offset(cpuOffset, device->GetDescriptorHandleIncrementSize(heapType));
-	cpuOffset++;
-	return handle;
-}
-
-D3D12_GPU_DESCRIPTOR_HANDLE EJDescriptorHeap::GetFreeGPUHandle()
-{
-	CD3DX12_GPU_DESCRIPTOR_HANDLE handle(heap->GetGPUDescriptorHandleForHeapStart());
-	handle.Offset(gpuOffset, device->GetDescriptorHandleIncrementSize(heapType));
-	gpuOffset++;
-	return handle;
+	while (staticsResources[offset])
+	{
+		offset++;
+	}
+	CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle(heap->GetCPUDescriptorHandleForHeapStart());
+	cpuHandle.Offset(offset, device->GetDescriptorHandleIncrementSize(heapType));
+	CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle;
+	if (!heapType == D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)
+	{
+		gpuHandle.ptr = 0;
+	}
+	else
+	{
+		gpuHandle = heap->GetGPUDescriptorHandleForHeapStart();
+	}
+	staticsResources[offset] = bIsResizable;
+	offset++;
+	return std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>(cpuHandle, gpuHandle);
 }

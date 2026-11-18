@@ -7,6 +7,8 @@
 using Microsoft::WRL::ComPtr;
 using namespace DirectX::SimpleMath;
 
+struct EJDescriptorHeaps;
+
 class ShadowMap
 {
 public:
@@ -26,7 +28,7 @@ public:
     void BuildDescriptors(
         CD3DX12_CPU_DESCRIPTOR_HANDLE hCpuSrv,
         CD3DX12_GPU_DESCRIPTOR_HANDLE hGpuSrv,
-        CD3DX12_CPU_DESCRIPTOR_HANDLE hCpuDsv);
+        EJDescriptorHeaps* heaps);
 
     void OnResize(UINT newWidth, UINT newHeight);
     int GetNumCascades() const;

@@ -262,7 +262,12 @@ void DX12App::DrawShadows() {
 }
 
 void DX12App::DrawToGBuffer() {
-	commandList->ClearDepthStencilView(GetDSV(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
+	CD3DX12_RESOURCE_BARRIER depthBarrier;
+	if (d3dUtil::SingleBarrier(&renderSystem->gBuffer->GetDepthTex(), D3D12_RESOURCE_STATE_DEPTH_WRITE, depthBarrier))
+	{
+		commandList->ResourceBarrier(1, &depthBarrier);
+	}
+	commandList->ClearDepthStencilView(renderSystem->gBuffer->GetDepthTex().dsvHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 
 	commandList->SetPipelineState(renderSystem->opaquePSO.Get());
 	commandList->SetGraphicsRootSignature(renderSystem->opaqueRS.Get());

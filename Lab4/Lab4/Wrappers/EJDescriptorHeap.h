@@ -21,19 +21,17 @@ public:
 
 	void Reset()
 	{
-		cpuOffset = 0;
-		gpuOffset = 0;
+		offset = 0;
 	}
 
-	D3D12_CPU_DESCRIPTOR_HANDLE GetFreeCPUHandle();
-	D3D12_GPU_DESCRIPTOR_HANDLE GetFreeGPUHandle();
+	std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> GetFreeHandles(const bool bIsResizable = false);
 
 private:
 	ComPtr<ID3D12DescriptorHeap> heap = nullptr;
 	D3D12_DESCRIPTOR_HEAP_TYPE heapType = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	ComPtr<ID3D12Device> device = nullptr;
-	uint32_t cpuOffset = 0;
-	uint32_t gpuOffset = 0;
+	std::vector<bool> staticsResources;
+ 	uint32_t offset = 0;
 };
 
 struct EJDescriptorHeaps

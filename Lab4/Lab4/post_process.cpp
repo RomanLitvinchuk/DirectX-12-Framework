@@ -124,20 +124,20 @@ void PostProcess::CreateRTV()
 	rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 	rtvDesc.Texture2D.MipSlice = 0;
 	rtvDesc.Texture2D.PlaneSlice = 0;
-	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(rtvHeap.GetFreeCPUHandle());
+	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(rtvHeap.GetFreeHandles().first);
 	auto rtvSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	hdrTextureA.rtvHandle = rtvHandle;
 	device->CreateRenderTargetView(hdrTextureA.Resource.Get(), &rtvDesc, rtvHandle);
 
-	rtvHandle = rtvHeap.GetFreeCPUHandle();
+	rtvHandle = rtvHeap.GetFreeHandles().first;
 	hdrTextureB.rtvHandle = rtvHandle;
 	device->CreateRenderTargetView(hdrTextureB.Resource.Get(), &rtvDesc, rtvHandle);
 
 	rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	rtvHandle = rtvHeap.GetFreeCPUHandle();
+	rtvHandle = rtvHeap.GetFreeHandles().first;
 	ldrTextureA.rtvHandle = rtvHandle;
 	device->CreateRenderTargetView(ldrTextureA.Resource.Get(), &rtvDesc, rtvHandle);
-	rtvHandle = rtvHeap.GetFreeCPUHandle();
+	rtvHandle = rtvHeap.GetFreeHandles().first;
 	ldrTextureB.rtvHandle = rtvHandle;
 	device->CreateRenderTargetView(ldrTextureB.Resource.Get(), &rtvDesc, rtvHandle);
 }
