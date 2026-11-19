@@ -24,17 +24,11 @@ cbuffer cbMaterial : register(b1)
     
     int gIsLion;
     int gIsTree;
-    int gDiffuseTextureIndex;
-    int normalTextureIndex;        
-    
-    int gDisplacementTextureIndex;
     int gHasDisplacementTexture;
-    int gShadowTextureIndex;
     int gHasShadowTexture;
     
-    int billboardTextureIndex;
     int hasbillboardTexture;
-    int2 pad2;
+    int3 pad2;
 }
 
 cbuffer cbViewport : register(b3)

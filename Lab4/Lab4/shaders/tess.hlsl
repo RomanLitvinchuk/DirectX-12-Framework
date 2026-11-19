@@ -24,12 +24,11 @@ cbuffer cbMaterial : register(b1)
     
     int gIsLion;
     int gIsTree;
-    int gDiffuseTextureIndex;
-    int normalTextureIndex;
-    
-    int gDisplacementTextureIndex;
     int gHasDisplacementTexture;
-    int2 padding;
+    int gHasShadowTexture;
+    
+    int hasBillboardTexture;
+    int3 padding;
 }
 
 Texture2D DiffuseMap : register(t0);

@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <d3d12.h>
+#include "d3dx12.h"
 #include <wrl.h>
 
 using Microsoft::WRL::ComPtr;
@@ -11,6 +12,7 @@ struct Texture
 	std::wstring filepath;
 	ComPtr<ID3D12Resource> Resource = nullptr;
 	ComPtr<ID3D12Resource> UploadHeap = nullptr;
-	UINT srvHeapIndex = 0;
+	CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle;
+	CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle;
 	bool isSRGB = false;
 };

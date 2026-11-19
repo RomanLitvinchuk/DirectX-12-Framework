@@ -2,6 +2,7 @@
 #include <DirectXCollision.h>
 #include <SimpleMath.h>
 #include <string>
+#include <d3d12.h>
 #include "instances.h"
 
 using namespace DirectX::SimpleMath;
@@ -32,5 +33,13 @@ struct Submesh
     int shadowInstanceOffset = 0;
 
     bool bUpdateble = false;
+    D3D12_GPU_DESCRIPTOR_HANDLE diffuseTexture;
+    D3D12_GPU_DESCRIPTOR_HANDLE normalTexture;
+    D3D12_GPU_DESCRIPTOR_HANDLE dispTexture;
+    D3D12_GPU_DESCRIPTOR_HANDLE billboardTexture;
+    bool bHasDiffuseTexture = false;
+    bool bHasNormalTexture = false;
+    bool bHasDispTexture = false;
+    bool bHasBillboardTexture = false;
 };
 

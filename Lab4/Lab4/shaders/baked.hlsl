@@ -24,12 +24,11 @@ cbuffer cbMaterial : register(b1)
     
     int gIsLion;
     int gIsTree;
-    int gDiffuseTextureIndex;
-    int normalTextureIndex;
-    
-    int gDisplacementTextureIndex;
-    int gHasDisplacementTexture;
-    int2 padding;
+    int hasDisplacementTexture;
+    int hasShadowTexture;
+
+    int hasBillboardTexture;
+    int3 padding;
 }
 
 struct InstanceData

@@ -39,4 +39,6 @@ private:
 	void FindSketchfabMaterials(const std::string& filename, MaterialConstants& matConst, SceneData& sceneData);
 	void FindTreeMaterials(const std::string& filename, MaterialConstants& matConst, SceneData& sceneData);
 	void FindCubeMaterials(const std::string& filename, MaterialConstants& matConst, SceneData& sceneData);
+
+	Submesh* currentSubmesh = nullptr;
 };

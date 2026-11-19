@@ -229,7 +229,7 @@ void DX12App::DrawShadows() {
 	const UINT shadowElementSize = ALIGN_256(sizeof(ShadowConstants));
 	const D3D12_GPU_VIRTUAL_ADDRESS matBaseAddress = currentFrameResource->materialBuffer->Resource()->GetGPUVirtualAddress();
 	const UINT matBufferSize = d3dUtil::CalcConstantBufferSize(sizeof(MaterialConstants));
-	const CD3DX12_GPU_DESCRIPTOR_HANDLE srvHeapStart(cbvSrvHeap->GetGPUDescriptorHandleForHeapStart());
+	//const CD3DX12_GPU_DESCRIPTOR_HANDLE srvHeapStart(cbvSrvHeap->GetGPUDescriptorHandleForHeapStart());
 
 	const int numCascades = shadowMap->GetNumCascades();
 
@@ -277,7 +277,7 @@ void DX12App::DrawToGBuffer() {
 	D3D12_CPU_DESCRIPTOR_HANDLE dsv = renderSystem->gBuffer->GetDepthTex().dsvHandle;
 	commandList->OMSetRenderTargets(_countof(rtvs), rtvs, false, &dsv);
 
-	ID3D12DescriptorHeap* descriptorHeaps[] = { cbvSrvHeap.Get(), samplerHeap.Get() };
+	ID3D12DescriptorHeap* descriptorHeaps[] = { heaps.srvHeap.Get(), samplerHeap.Get() };
 	commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
 	commandList->SetGraphicsRootConstantBufferView(0, currentFrameResource->objectsUploadBuffer->Resource()->GetGPUVirtualAddress());
@@ -302,18 +302,34 @@ void DX12App::DrawToGBuffer() {
 		commandList->SetGraphicsRootConstantBufferView(3, matAddress);
 
 		bIsTreeVisible = sceneData.materials[matIndex].isTree == 1;
-		int texHeapIndex = sceneData.materials[matIndex].diffuseTextureIndex + 1;
 
-		CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(cbvSrvHeap->GetGPUDescriptorHandleForHeapStart(), texHeapIndex, cbvDescriptorSize);
-		commandList->SetGraphicsRootDescriptorTable(1, srvHandle);
+		if (sm.bHasDiffuseTexture)
+		{
+			commandList->SetGraphicsRootDescriptorTable(1, sm.diffuseTexture);
+		}
+		else
+		{
+			commandList->SetGraphicsRootDescriptorTable(1, heaps.srvHeap->GetGPUDescriptorHandleForHeapStart());
+		}
 
-		int normHeapIndex = sceneData.materials[matIndex].normalTextureIndex + 1;
-		CD3DX12_GPU_DESCRIPTOR_HANDLE normHandle(cbvSrvHeap->GetGPUDescriptorHandleForHeapStart(), normHeapIndex, cbvDescriptorSize);
-		commandList->SetGraphicsRootDescriptorTable(4, normHandle);
+		if (sm.bHasNormalTexture)
+		{
+			commandList->SetGraphicsRootDescriptorTable(4, sm.normalTexture);
+		}
+		else
+		{
+			commandList->SetGraphicsRootDescriptorTable(4, heaps.srvHeap->GetGPUDescriptorHandleForHeapStart());
+		}
 
-		int dispHeapIndex = sceneData.materials[matIndex].displacementTextureIndex + 1;
-		CD3DX12_GPU_DESCRIPTOR_HANDLE dispHandle(cbvSrvHeap->GetGPUDescriptorHandleForHeapStart(), dispHeapIndex, cbvDescriptorSize);
-		commandList->SetGraphicsRootDescriptorTable(5, dispHandle);
+		if (sm.bHasDispTexture)
+		{
+			commandList->SetGraphicsRootDescriptorTable(5, sm.dispTexture);
+		}
+		else
+		{
+			commandList->SetGraphicsRootDescriptorTable(5, heaps.srvHeap->GetGPUDescriptorHandleForHeapStart());
+		}
+
 
 		DrawLOD0ToGBuffer(currentInstanceOffset, sm);
 		DrawLOD1ToGBuffer(currentInstanceOffset, sm);
@@ -394,10 +410,16 @@ void DX12App::DrawBillboardsToGBuffer(UINT& currentInstanceOffset, Submesh& sm) 
 		commandList->SetGraphicsRootShaderResourceView(0, currentFrameResource->instanceBuffer->Resource()->GetGPUVirtualAddress());
 		commandList->SetGraphicsRootConstantBufferView(1, currentFrameResource->cameraBuffer->Resource()->GetGPUVirtualAddress());
 		commandList->SetGraphicsRootConstantBufferView(2, currentFrameResource->objectsUploadBuffer->Resource()->GetGPUVirtualAddress());
-		int matIndex = sm.materialIndex;
-		int bTextureIndex = sceneData.materials[matIndex].billboardTextureIndex + 1;
-		CD3DX12_GPU_DESCRIPTOR_HANDLE bHandle(cbvSrvHeap->GetGPUDescriptorHandleForHeapStart(), bTextureIndex, cbvDescriptorSize);
-		commandList->SetGraphicsRootDescriptorTable(3, bHandle);
+
+		if (sm.bHasBillboardTexture)
+		{
+			commandList->SetGraphicsRootDescriptorTable(3, sm.billboardTexture);
+		}
+		else
+		{
+			commandList->SetGraphicsRootDescriptorTable(3, heaps.srvHeap->GetGPUDescriptorHandleForHeapStart());
+		}
+
 		commandList->SetGraphicsRootDescriptorTable(4, samplerHeap->GetGPUDescriptorHandleForHeapStart());
 		commandList->DrawInstanced(
 			4,

@@ -65,13 +65,20 @@ bool FSRManager::Initialize(UINT renderWidth, UINT renderHeight, UINT displayWid
 	createBackend.header.type = FFX_API_CREATE_CONTEXT_DESC_TYPE_BACKEND_DX12;
 	createBackend.device = SingletonDevice::GetDevice().Get();
 	
+	ffxCreateContextDescUpscaleVersion upscaleVersion = {};
+	upscaleVersion.header.type = FFX_API_CREATE_CONTEXT_DESC_TYPE_UPSCALE_VERSION;
+	upscaleVersion.version = FFX_UPSCALER_VERSION;
+
 	ffxCreateContextDescUpscale createUpscale = { 0 };
 	createUpscale.header.type = FFX_API_CREATE_CONTEXT_DESC_TYPE_UPSCALE;
-	createUpscale.header.pNext = &createBackend.header;
 	createUpscale.flags = FFX_UPSCALE_ENABLE_HIGH_DYNAMIC_RANGE;
 	createUpscale.fpMessage = nullptr;
 	createUpscale.maxRenderSize = {renderWidth, renderHeight};
 	createUpscale.maxUpscaleSize = {displayWidth, displayHeight};
+
+	createUpscale.header.pNext = &upscaleVersion.header;
+	upscaleVersion.header.pNext = &createBackend.header;
+
 	ffxReturnCode_t retCode = createContext(&upscaleContext, &createUpscale.header, nullptr);
 	if (retCode != FFX_API_RETURN_OK)
 	{
@@ -89,6 +96,7 @@ bool FSRManager::Initialize(UINT renderWidth, UINT renderHeight, UINT displayWid
 	if (result != FFX_API_RETURN_OK)
 	{
 		OutputDebugStringW(L"[FSR] Failed to create jitter phase count");
+		Shutdown();
 		return false;
 	}
 	jitterIndex = 0;

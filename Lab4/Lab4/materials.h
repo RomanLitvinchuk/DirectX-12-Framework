@@ -21,16 +21,11 @@ struct MaterialConstants
 
     int isLion = 0;
     int isTree = 0;
-    int diffuseTextureIndex = 0; 
-    int normalTextureIndex = 0;
-
-    int displacementTextureIndex = 0;
     int hasDisplacementTexture = 0;
-    int shadowTextureIndex = 0;
     int hasShadowTexture = 0;
 
-    int billboardTextureIndex = 0;
+
     int hasBillboardTexture = 0;
-    int pad[2];
+    int pad[3];
 };
 

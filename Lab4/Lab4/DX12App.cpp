@@ -510,6 +510,7 @@ void DX12App::OnResize() {
 
 	heaps.rtvHeap.Reset();
 	heaps.dsvHeap.Reset();
+	heaps.srvHeap.Reset();
 	InitProjectionMatrix();
 	currentBackBuffer = 0;
 	CreateRTV();
@@ -545,7 +546,6 @@ void DX12App::BuildOctree() {
 void DX12App::LoadTextures()
 {
 	ThrowIfFailed(commandList->Reset(currentFrameResource->cmdListAlloc.Get(), nullptr));
-	UINT index = RESERVED_TEXTURES + 1;
 
 	for (auto& entry : std::filesystem::directory_iterator(L"textures"))
 	{
@@ -558,11 +558,6 @@ void DX12App::LoadTextures()
 		auto tex = std::make_unique<Texture>();
 		tex->name_ = std::string(name.begin(), name.end());
 		tex->filepath = path.wstring();
-		if (tex->name_.find("noise") != std::string::npos) {
-			tex->srvHeapIndex = 1;
-			tex->isSRGB = false;
-		}
-		else tex->srvHeapIndex = index++;
 
 		ThrowIfFailed(CreateDDSTextureFromFile12(
 			device.Get(),
@@ -571,7 +566,7 @@ void DX12App::LoadTextures()
 			tex->Resource,
 			tex->UploadHeap));
 
-		std::wcout << L"Loaded texture: [" << name << L"] to index: " << tex->srvHeapIndex << std::endl;
+		std::wcout << L"Loaded texture: [" << name << L"]" << std::endl;
 
 		sceneData.textures[name] = std::move(tex);
 	}

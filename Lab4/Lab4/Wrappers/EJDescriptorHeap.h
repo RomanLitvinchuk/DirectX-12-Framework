@@ -1,6 +1,6 @@
 #pragma once
 #include <d3d12.h>
-#include "d3dx12.h"
+#include <d3dx12.h>
 #include <wrl.h>
 
 using Microsoft::WRL::ComPtr;
@@ -24,7 +24,7 @@ public:
 		offset = 0;
 	}
 
-	std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> GetFreeHandles(const bool bIsResizable = false);
+	std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> GetFreeHandles(const bool bIsNotResizable = false);
 
 private:
 	ComPtr<ID3D12DescriptorHeap> heap = nullptr;

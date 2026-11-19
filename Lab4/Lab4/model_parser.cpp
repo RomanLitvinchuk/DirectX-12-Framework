@@ -50,6 +50,7 @@ void ModelParser::ParseMesh(const std::string& filename, const aiScene* scene, a
 
 	sceneData.meshIndexCounts.push_back(mesh->mNumFaces * 3);
 	Submesh submesh;
+	currentSubmesh = &submesh;
 	submesh.name_ = filename;
 	submesh.indexCount = mesh->mNumFaces * 3;
 	submesh.startIndiceIndex = startIndex;
@@ -239,9 +240,13 @@ void ModelParser::FindDiffuseTexture(MaterialConstants& matConst, aiMaterial* ma
 {
 	aiString texPath;
 	bool foundPath = false;
-	if (material->GetTexture(aiTextureType_DIFFUSE, 0, &texPath) == AI_SUCCESS) foundPath = true;
+	if (material->GetTexture(aiTextureType_DIFFUSE, 0, &texPath) == AI_SUCCESS)
+	{
+		foundPath = true;
+	}
 
-	if (foundPath) {
+	if (foundPath)
+	{
 		std::filesystem::path p(texPath.C_Str());
 		std::wstring wName = p.stem().wstring();
 		std::transform(wName.begin(), wName.end(), wName.begin(), ::towlower);
@@ -256,23 +261,31 @@ void ModelParser::FindDiffuseTexture(MaterialConstants& matConst, aiMaterial* ma
 		}
 
 		if (sceneData.textures.count(wName)) {
-			matConst.diffuseTextureIndex = sceneData.textures[wName]->srvHeapIndex;
+			currentSubmesh->diffuseTexture = sceneData.textures[wName]->gpuHandle;
+			currentSubmesh->bHasDiffuseTexture = true;
 			sceneData.textures[wName]->isSRGB = true;
 		}
-		else {
+		else
+		{
 			std::cout << "DO NOT FIND DIFFUSE TEXTURE" << std::endl;
 		}
 	}
+	
 }
 
 void ModelParser::FindDisplacementOrHeightTexture(MaterialConstants& matConst, aiMaterial* material, SceneData& sceneData)
 {
 	bool foundPath = false;
 	aiString dispPath;
-	if (material->GetTexture(aiTextureType_DISPLACEMENT, 0, &dispPath) == AI_SUCCESS) foundPath = true;
-	else if (material->GetTexture(aiTextureType_HEIGHT, 0, &dispPath) == AI_SUCCESS) foundPath = true;
+	bool bDisp = material->GetTexture(aiTextureType_DISPLACEMENT, 0, &dispPath) == AI_SUCCESS;
+	bool bHeight = material->GetTexture(aiTextureType_HEIGHT, 0, &dispPath) == AI_SUCCESS;
+	if (bDisp || bHeight)
+	{
+		foundPath = true;
+	}
 
-	if (foundPath) {
+	if (foundPath)
+	{
 		std::filesystem::path p(dispPath.C_Str());
 		std::wstring wName = p.stem().wstring();
 		std::transform(wName.begin(), wName.end(), wName.begin(), ::towlower);
@@ -280,21 +293,28 @@ void ModelParser::FindDisplacementOrHeightTexture(MaterialConstants& matConst, a
 		std::cout << "   Looking for: " << sName << std::endl;
 
 		if (sceneData.textures.count(wName)) {
-			matConst.normalTextureIndex = sceneData.textures[wName]->srvHeapIndex;
+			currentSubmesh->normalTexture = sceneData.textures[wName]->gpuHandle;
+			currentSubmesh->bHasNormalTexture = true;
 			matConst.hasNormalTexture = 1;
 		}
-		else {
+		else
+		{
 			std::cout << "DO NOT FIND DISP TEXTURE" << std::endl;
 		}
 	}
+	
 }
 
 void ModelParser::FindNormalTexture(MaterialConstants& matConst, aiMaterial* material, SceneData& sceneData) {
 	bool foundPath = false;
 	aiString normPath;
-	if (material->GetTexture(aiTextureType_NORMALS, 0, &normPath) == AI_SUCCESS) foundPath = true;
+	if (material->GetTexture(aiTextureType_NORMALS, 0, &normPath) == AI_SUCCESS)
+	{
+		foundPath = true;
+	}
 
-	if (foundPath) {
+	if (foundPath)
+	{
 		std::filesystem::path p(normPath.C_Str());
 		std::wstring wName = p.stem().wstring();
 		std::transform(wName.begin(), wName.end(), wName.begin(), ::towlower);
@@ -302,11 +322,9 @@ void ModelParser::FindNormalTexture(MaterialConstants& matConst, aiMaterial* mat
 		std::cout << "   Looking for: " << sName << std::endl;
 
 		if (sceneData.textures.count(wName)) {
-			matConst.normalTextureIndex = sceneData.textures[wName]->srvHeapIndex;
+			currentSubmesh->normalTexture = sceneData.textures[wName]->gpuHandle;
+			currentSubmesh->bHasNormalTexture = true;
 			matConst.hasNormalTexture = 1;
-		}
-		else {
-			std::cout << "DO NOT FIND NORMAL TEXTURE" << std::endl;
 		}
 	}
 }
@@ -316,13 +334,15 @@ void ModelParser::FindSketchfabMaterials(const std::string& filename, MaterialCo
 		std::wstring wName = L"Stone_Pathway_Normal";
 		std::transform(wName.begin(), wName.end(), wName.begin(), ::towlower);
 		if (sceneData.textures.count(wName)) {
-			matConst.normalTextureIndex = sceneData.textures[wName]->srvHeapIndex;
+			currentSubmesh->normalTexture = sceneData.textures[wName]->gpuHandle;
+			currentSubmesh->bHasNormalTexture = true;
 			matConst.hasNormalTexture = 1;
 		}
 		wName = L"Stone_Pathway_Height";
 		std::transform(wName.begin(), wName.end(), wName.begin(), ::towlower);
 		if (sceneData.textures.count(wName)) {
-			matConst.displacementTextureIndex = sceneData.textures[wName]->srvHeapIndex;
+			currentSubmesh->dispTexture = sceneData.textures[wName]->gpuHandle;
+			currentSubmesh->bHasDispTexture = true;
 			matConst.hasDisplacementTexture = 1;
 		}
 	}
@@ -334,7 +354,8 @@ void ModelParser::FindTreeMaterials(const std::string& filename, MaterialConstan
 		std::wstring wName = L"tree_billboard";
 		if (sceneData.textures.count(wName)) {
 			matConst.hasBillboardTexture = 1;
-			matConst.billboardTextureIndex = sceneData.textures[wName]->srvHeapIndex;
+			currentSubmesh->billboardTexture = sceneData.textures[wName]->gpuHandle;
+			currentSubmesh->bHasBillboardTexture = true;
 			sceneData.textures[wName]->isSRGB = true;
 		}
 	}
@@ -345,14 +366,14 @@ void ModelParser::FindCubeMaterials(const std::string& filename, MaterialConstan
 	if (filename.find("HydraMoonSimpleCube") != std::string::npos) {
 		std::wstring wName = L"white";
 		if (sceneData.textures.count(wName)) {
-			matConst.diffuseTextureIndex = sceneData.textures[wName]->srvHeapIndex;
+			currentSubmesh->diffuseTexture = sceneData.textures[wName]->gpuHandle;
+			currentSubmesh->bHasDiffuseTexture = true;
 			sceneData.textures[wName]->isSRGB = true;
 		}
-		wName = L"rainbow";
-		if (sceneData.textures.count(wName)) {
-			matConst.shadowTextureIndex = sceneData.textures[wName]->srvHeapIndex;
-			matConst.hasShadowTexture = 1;
-			sceneData.textures[wName]->isSRGB = true;
-		}
+		//wName = L"rainbow";
+		//if (sceneData.textures.count(wName)) {
+		//	matConst.hasShadowTexture = 1;
+		//	sceneData.textures[wName]->isSRGB = true;
+		//}
 	}
 }

@@ -7,6 +7,7 @@ void DX12App::CreateCBVDescriptorHeap() {
 	CBV_SRV_HeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	CBV_SRV_HeapDesc.NodeMask = 0;
 	ThrowIfFailed(device->CreateDescriptorHeap(&CBV_SRV_HeapDesc, IID_PPV_ARGS(&cbvSrvHeap)));
+	heaps.srvHeap.Create(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1000);
 
 	D3D12_DESCRIPTOR_HEAP_DESC UAV_heapDesc;
 	UAV_heapDesc.NumDescriptors = 10;
@@ -17,14 +18,11 @@ void DX12App::CreateCBVDescriptorHeap() {
 }
 
 void DX12App::CreateSRV() {
-
-	auto handle = cbvSrvHeap->GetCPUDescriptorHandleForHeapStart();
-
 	for (auto& [name, tex] : sceneData.textures)
 	{
-		CD3DX12_CPU_DESCRIPTOR_HANDLE h(handle,
-			tex->srvHeapIndex + 1,
-			cbvDescriptorSize);
+		auto [cpuHandle, gpuHandle] = heaps.srvHeap.GetFreeHandles(true);
+		tex->cpuHandle = cpuHandle;
+		tex->gpuHandle = gpuHandle;
 
 		D3D12_SHADER_RESOURCE_VIEW_DESC desc{};
 		desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
@@ -38,7 +36,7 @@ void DX12App::CreateSRV() {
 		desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		desc.Texture2D.MipLevels = tex->Resource->GetDesc().MipLevels;
 
-		device->CreateShaderResourceView(tex->Resource.Get(), &desc, h);
+		device->CreateShaderResourceView(tex->Resource.Get(), &desc, tex->cpuHandle);
 	}
 }
 
